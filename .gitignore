@@ -1,0 +1,7 @@
+/Library/
+bin/
+obj/
+.vs/
+*.user
+*.suo
+

@@ -25,8 +25,9 @@ public sealed class GoldenCoverageReportTests
     public static TheoryData<string> Models => new()
     {
         "8275-1.mpd",
-        "8458 - Silver Truck (B).mpd",
-        "8458 - Street Sensation (Web).mpd",
+        "42055-1.mpd",
+        "42100-1.mpd",
+        "42121-1.mpd",
     };
 
     [ShadowTheory]

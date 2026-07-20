@@ -2,17 +2,17 @@
 
 ## Goal
 
-Build a Windows desktop application that loads the three supplied LDraw MPD models, renders them efficiently, reconstructs their high-confidence mechanical connections, and animates selected rotary drivetrains with auditable gear ratios.
+Build a Windows desktop application that loads the four supplied LDraw MPD models, renders them efficiently, reconstructs their high-confidence mechanical connections, and animates selected rotary drivetrains with auditable gear ratios.
 
 The first release is a kinematic simulator, not a rigid-body dynamics engine. It models pose and velocity constraints, not mass, torque, friction, gravity, backlash, or material deformation.
 
-The honest MVP is narrower than "make every moving part in all three models work":
+The honest MVP is narrower than "make every moving part in all four models work":
 
-- Load and inspect all three models.
+- Load and inspect all four models.
 - Show inferred connection features, shafts, bearings, gear meshes, confidence, and unsupported boundaries.
 - Animate validated spur, bevel, crown, and worm gear paths from a user-selected input.
 - Keep tracks, hoses, springs, and most linkages static.
-- Treat differentials, racks, exact universal-joint motion, and torque-dependent clutch slip as explicit later work rather than silently guessing.
+- Treat turntables, exact universal-joint motion, transmission changeover selection, and torque-dependent clutch slip as explicit later work rather than silently guessing.
 
 ## Review findings and corrections
 
@@ -24,7 +24,7 @@ The original plan had the right central insight: LDraw supplies geometry but no 
 4. Shadow metadata provides useful geometry, but it does not completely determine mechanics. An axle-shaped male in an axle hole is keyed, and an axle in a round hole is a bearing; however, a round pin in a round hole, a clip, or fingers may be structural or may form a hinge. Those cases need confidence-ranked inference and model overrides.
 5. `SNAP_INCL` is defined as non-recursive. Shadow inheritance also has `id`, `group`, `scale`, and `mirror` behavior that cannot be omitted. `SNAP_CLEAR` must operate in file order after inherited child features.
 6. Rigidly unioning all "fixed" snap pairs would over-constrain real Technic mechanisms. The MVP should construct rotary shaft assemblies first and leave ambiguous body grouping visible and overridable.
-7. A differential is not an equal-and-opposite graph conflict. It is a multi-shaft constraint with an extra degree of freedom. Detect it from known part semantics and stop or invoke a later differential solver.
+7. A differential is not an equal-and-opposite graph conflict. It is a multi-shaft constraint with an extra degree of freedom. Detect it from known part semantics and stop or invoke a later differential solver. No currently supplied model contains one, so this is a guard against mis-classification rather than a feature to build.
 8. Worm non-backdrivability and clutch slip are torque/friction effects. A pure kinematic solver may propagate the worm velocity constraint in either direction and may expose a clutch as locked/free, but it must not claim to predict load-dependent behavior.
 9. The viewer belongs early in the project. Feature axes, overlapping spans, candidate meshes, and bad inferred connections are much faster to debug visually than from logs alone.
 
@@ -35,16 +35,24 @@ The following is an independent lexical/graph audit of the files currently in `M
 | Model | MPD sections | Physical type-1 lines | Expanded logical part instances | Distinct logical parts |
 | --- | ---: | ---: | ---: | ---: |
 | 8275 Motorized Bulldozer | 157 | 3,021 | 3,029 | 138 |
-| 8458 Silver Truck (B) | 29 | 2,093 | 2,068 | 116 |
-| 8458 Street Sensation (Web) | 50 | 2,289 | 2,240 | 117 |
+| 42055 Bucket Wheel Excavator | 79 | 4,385 | 3,928 | 146 |
+| 42100 Liebherr R 9800 | 186 | 8,655 | 7,279 | 183 |
+| 42121 Heavy-Duty Excavator | 57 | 1,215 | 576 | 107 |
 
 These numbers describe different things and must remain separate in reports. In particular, 3,021 is not the flattened 8275 part count. Fully descending into the embedded LS70 geometry produces tens of thousands of primitive references; those primitives are geometry, not independent LEGO part instances.
 
+The two columns move independently, in both directions, and neither ordering is a defect:
+
+- 8275 expands *above* its physical line count (3,021 to 3,029) because submodels are referenced more than once.
+- The three 42xxx models expand *below* it, most sharply 42121 (1,215 to 576). Their MPD section lists include embedded parts and embedded primitives (`s\...`, `confric*`, `npeghol3`, `clh6`). Type-1 lines inside those definitions are physical lines, but logical expansion correctly stops at the part boundary. The resulting instance counts track the real set inventories closely, which is the useful cross-check: 42121 resolves to 576 against a 569-piece set.
+
 Other scope-relevant facts found in the supplied files:
 
-- 8275 uses 1,630 instances of the embedded LS70 track-link part, two motors, spur/bevel gears, a worm, clutch gears, universal joints, and sprockets.
-- Both 8458 variants contain a 6573 differential and gear racks. A complete 8458 drivetrain therefore requires differential and rotary-to-linear constraints beyond the MVP.
-- The 8458 MPDs contain large generated fallback meshes for hoses and springs. The Silver model has 11,576 conditional lines; the Web model has 22,624. The first renderer should draw the solid fallback geometry and may defer camera-dependent conditional edges.
+- 8275 uses 1,630 instances of the embedded LS70 track-link part, two Power Functions Medium Motors (58120), spur/bevel gears, two worms, 24-tooth clutch gears, universal joints, and sprockets. It stays the reference drivetrain for the MVP because it is the only supplied model with a motor.
+- No supplied model contains a 6573 differential or a gear rack. Differential constraints and rotary-to-linear racks are therefore no longer required by any shipped demonstration, and drop from the critical path to opportunistic Phase 5 work.
+- The new mechanism boundaries are turntables (99009, 28-tooth: two in 42055, four in 42100), 16-tooth clutch gears (18946, twenty-two in 42055), and transmission changeover catches (6641, four in 42055). Universal joints are now present in every model (62520/3712).
+- 42055 is the gear-density outlier and the best Phase 3 stress case after 8275: 25 twelve-tooth double bevels, 22 sixteen-tooth clutch gears, 22 reinforced sixteen-tooth, 11 twenty-tooth double bevels, and one worm.
+- 42055 carries the generated hose/spring fallback meshes: 7,433 physical conditional lines expanding to 6,806, plus 4,122 physical quads. 42100 and 42121 have inline geometry that is entirely unreferenced from their roots. The first renderer should draw the solid fallback geometry and may defer camera-dependent conditional edges.
 - The current shadow checkout has direct data for many critical parts, but not every one. For example, 3647, 32270, motors, and several clutch/worm parts have no direct shadow file and must obtain features through primitive inheritance or the mechanics catalog.
 
 ## Repository and external data
@@ -158,10 +166,10 @@ The shadow library describes connection geometry, not gear teeth, pitch surfaces
 
 - Gear type, tooth count, local rotation axis, pitch center/radius, tooth-face width, compatible mesh types, and optional handedness/starts.
 - Motor output feature and default input label.
-- Worm, crown gear, sprocket, clutch, universal-joint, differential, and rack component type.
+- Worm, crown gear, sprocket, clutch, universal-joint, turntable, changeover-catch, differential, and rack component type. The last two are unused by the supplied models but stay in the schema so an unexpected part is classified rather than silently meshed.
 - Animation ownership hints for compound parts when a logical LDraw part contains moving internal geometry that cannot be separated.
 
-Bootstrap tooth counts from official descriptions, but hand-review every part used by the three models. Start with the actual inventory, not an arbitrary 40-gear catalog. Schema-validate the JSON and include a source/note for every manual entry.
+Bootstrap tooth counts from official descriptions, but hand-review every part used by the four models. Start with the actual inventory, not an arbitrary 40-gear catalog. Schema-validate the JSON and include a source/note for every manual entry.
 
 `Models/<model>.mechanics.json` contains model-specific, reviewable corrections:
 
@@ -214,7 +222,7 @@ Coverage must report both unique logical parts and weighted logical instances, d
 
 Gate:
 
-- All three MPDs resolve with no cycles or missing references against the chosen official library.
+- All four MPDs resolve with no cycles or missing references against the chosen official library.
 - Parser results reproduce the baseline table or explain any intentionally different classification.
 - Critical 8275 axle/gear/motor parts have effective shaft features, whether inherited or cataloged.
 - No production code from this phase is thrown away.
@@ -225,7 +233,7 @@ Finish solid mesh building, colors, BFC, caching, Helix adapter, camera controls
 
 Gate:
 
-- All three models load and remain interactively navigable on the target machine.
+- All four models load and remain interactively navigable on the target machine.
 - 8275 track links are instanced/static rather than expanded into independent vertex buffers.
 - Clicking a rendered instance returns the correct hierarchical logical instance ID.
 - Automated transform/color fixtures and a manual render checklist pass.
@@ -251,7 +259,7 @@ Gate:
 
 - A reviewed 8275 shaft/gear subgraph is deterministic from automatic data plus its committed sidecar.
 - Every included gear mesh shows tooth counts, measured center/face residuals, confidence, and provenance.
-- Unsupported clutch/universal/sprocket boundaries are visible rather than treated as ordinary gears.
+- Unsupported clutch, universal-joint, sprocket, turntable, and changeover-catch boundaries are visible rather than treated as ordinary gears.
 
 ### Phase 4 - Solver and first end-to-end animation
 
@@ -269,13 +277,16 @@ MVP gate:
 
 Add features only behind separate tests and acceptance examples:
 
-1. Clutch locked/free state and better motor templates.
-2. Average-ratio universal joints, followed by phase-correct articulated animation if needed.
-3. Differentials using multi-variable constraints.
-4. Rack-and-pinion and linear actuators using translational degrees of freedom.
+Ordered by what the supplied models actually contain, most-used first:
+
+1. Clutch locked/free state and better motor templates. 18946 and 76019 clutch gears appear in 8275, 42055, and 42100.
+2. Average-ratio universal joints, followed by phase-correct articulated animation if needed. Present in all four models.
+3. Turntables as large-diameter external gears, including the 28-tooth 99009 in 42055 and 42100.
+4. Transmission changeover catches (6641) as selectable-path constraints, driven by 42055's gearbox.
 5. Steering/suspension closed-loop pose solving.
 6. Sprocket/track path animation and flexible-part abstractions.
-7. Torque/dynamics only as a distinct future subsystem; do not mix it into the velocity graph incrementally.
+7. Differentials and rack-and-pinion using multi-variable and translational constraints. No supplied model needs these; build them only if a model that uses them is added.
+8. Torque/dynamics only as a distinct future subsystem; do not mix it into the velocity graph incrementally.
 
 ## Test strategy
 
@@ -292,11 +303,11 @@ Performance measurements should separately record parse time, definition-cache h
 ## MVP acceptance criteria
 
 - Clean setup instructions work with a current complete ZIP, an extracted LDraw directory, or LeoCAD's `library.bin`.
-- The app loads all three supplied MPDs without unresolved files and explains which content is static or unsupported.
+- The app loads all four supplied MPDs without unresolved files and explains which content is static or unsupported.
 - Model tree selection, rendered selection, logical instance IDs, feature diagnostics, and CLI reports agree.
 - High-confidence axle/keyed/bearing relations are span-aware and covered by fixtures.
 - At least one reviewed 8275 multi-gear drivetrain animates with a hand-checked exact ratio and direction.
-- Ambiguities, graph conflicts, missing catalog data, and unsupported differential/rack/clutch/track behavior are visible and never silently guessed.
+- Ambiguities, graph conflicts, missing catalog data, and unsupported clutch/universal/turntable/track behavior are visible and never silently guessed.
 - External data provenance and required license attribution are present in diagnostics/About and release packaging.
 
 ## Primary references

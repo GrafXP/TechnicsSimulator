@@ -53,7 +53,7 @@ public sealed class LogicalPartExpander
                         if (command.LineType is 2 or 3 or 4 or 5)
                         {
                             // Geometry written directly into a model section: the generated
-                            // hose and spring fallback meshes in the 8458 files.
+                            // hose and spring fallback meshes, most heavily in 42055.
                             inlineGeometry[command.LineType] =
                                 inlineGeometry.GetValueOrDefault(command.LineType) + 1;
                         }

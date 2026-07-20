@@ -44,15 +44,18 @@ Automatic inference is deliberately conservative. For example, an axle-shaped sh
 
 ## Supplied models
 
-The repository includes three LDraw MPDs in [Models/](Models/):
+The repository includes four LDraw MPDs in [Models/](Models/):
 
 | Model | MPD sections | Source type-1 lines | Expanded logical parts | Notable mechanisms |
 | --- | ---: | ---: | ---: | --- |
 | 8275 Motorized Bulldozer | 157 | 3,021 | 3,029 | Two motors, gears, worm, clutches, universal joints, sprockets, tracks |
-| 8458 Silver Truck (B) | 29 | 2,093 | 2,068 | Gears, differential, racks, steering, suspension |
-| 8458 Street Sensation (Web) | 50 | 2,289 | 2,240 | Gears, differential, racks, generated hoses and springs |
+| 42055 Bucket Wheel Excavator | 79 | 4,385 | 3,928 | Dense gearbox, worm, clutch gears, changeover catches, turntables, hoses |
+| 42100 Liebherr R 9800 | 186 | 8,655 | 7,279 | Gears, turntables, universal joints, tracks |
+| 42121 Heavy-Duty Excavator | 57 | 1,215 | 576 | Gears, universal joints, tracks |
 
-The distinction between source lines and logical parts matters. The 8275 MPD embeds an unofficial LS70 track-link part and uses it 1,630 times. Recursively expanding that part's rendering primitives produces tens of thousands of references, but those primitives are not separate LEGO parts.
+The distinction between source lines and logical parts matters, and it runs in both directions. The 8275 MPD embeds an unofficial LS70 track-link part and uses it 1,630 times; recursively expanding that part's rendering primitives produces tens of thousands of references, but those primitives are not separate LEGO parts. The 42xxx MPDs go the other way: their section lists include embedded parts and primitives, so they contain more source type-1 lines than the model has actual parts.
+
+8275 is the reference drivetrain for the MVP because it is the only supplied model with a motor.
 
 ## MVP scope
 
@@ -85,7 +88,7 @@ The implementation targets .NET 8 and Windows WPF:
 
 ```text
 src/TechnicsSim.LDraw/       Parsing, file sources, transforms, colours, geometry  [exists]
-src/TechnicsSim.Mechanics/   Snap features, matching, catalog, graph, solver       [phase 2]
+src/TechnicsSim.Mechanics/   Snap features, matching, catalog, graph, solver       [exists]
 src/TechnicsSim.Wpf/         Helix-based viewer and diagnostics UI                 [exists]
 tools/TechnicsSim.Cli/       Coverage reports and graph diagnostics                [exists]
 tests/TechnicsSim.Tests/     Fixtures, golden reports, and integration tests       [exists]
@@ -109,7 +112,7 @@ See [PLAN.md](PLAN.md) for the reviewed technical design, delivery gates, data m
 - [x] Establish the external shadow-library source and revision.
 - [x] Phase 0: solution, resolver, permanent audit CLI, and library bootstrap.
 - [x] Phase 1: loader and visual vertical slice.
-- [ ] Phase 2: shadow features and connection diagnostics.
+- [x] Phase 2: shadow features and connection diagnostics.
 - [ ] Phase 3: mechanics catalog, sidecars, and shaft graph.
 - [ ] Phase 4: solver and first validated drivetrain animation.
 
@@ -136,9 +139,12 @@ dotnet run --project tools/TechnicsSim.Cli -- library-info
 dotnet run --project tools/TechnicsSim.Cli -- inspect-model "Models/8275-1.mpd"
 dotnet run --project tools/TechnicsSim.Cli -- coverage "Models/8275-1.mpd" --json reports/8275.json
 dotnet run --project tools/TechnicsSim.Cli -- mesh-stats "Models/8275-1.mpd"
+dotnet run --project tools/TechnicsSim.Cli -- connections "Models/8275-1.mpd" --json reports/8275-connections.json
 ```
 
 `library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count. `mesh-stats` builds the whole render scene headlessly and reports batching, instancing, and triangle counts, so rendering claims can be checked in CI rather than eyeballed.
+
+`connections` replays effective shadow patches through the official part tree, places finite snap sections on logical instances, and emits span-aware mate candidates. Its JSON includes residuals, confidence, ambiguities, rejected scale/mirror inheritance, and the shadow line plus transform chain behind every feature. In the viewer, enable **Diagnostics** to see feature axes and section profiles; cyan is matched, orange unmatched, magenta ambiguous, and green lines mark unambiguous mate candidates. Selecting a part shows the named rule and residuals behind its first candidate.
 
 Exit codes are `0` for success, `1` for a configuration or usage error, and `2` when a model has unresolved references.
 
@@ -185,13 +191,12 @@ Implemented so far:
 - Colour fixtures covering inherited colour 16, edge colour 24, direct colours, and material clauses that must not overwrite a surface colour.
 - Scene batching assertions: repeated parts collapse to one vertex buffer, colour variants share it, and uploaded triangles stay separate from drawn triangles.
 - Selection mapping from a rendered instance index back to its hierarchical logical instance ID, and the axis conversion's handedness.
+- Effective shadow inheritance with finite `SNAP_CYL`, clip, finger, and generic shapes; `SNAP_CLEAR`; non-recursive `SNAP_INCL`; centered/uncentered grids; and scale/mirror policies.
+- Span-aware axle/bore mating, separate radial/axial/angular residuals, named confidence rules, same-instance exclusion, and explicit many-to-many ambiguity.
+- CLI JSON provenance and viewer overlays for section profiles, axes, mates, unmatched features, and ambiguous candidates.
 
 Planned:
 
-- Shadow inheritance, grid, mirror, scale, include, and clear behavior.
-- An axle through a round beam hole, expected to form a bearing.
-- An axle through a gear's axle hole, expected to form a keyed connection.
-- Overlapping axial spans whose feature origins do not coincide.
 - 8:24 and three-gear ratio fixtures with exact sign composition.
 - Hand-checked ratios for the first animated 8275 drivetrain.
 

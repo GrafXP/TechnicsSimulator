@@ -1,0 +1,1401 @@
+{
+  "schemaVersion": 1,
+  "model": {
+    "file": "42055-1.mpd",
+    "rootSection": "42055 - main.ldr",
+    "mpdSections": 79
+  },
+  "sources": {
+    "officialLibrary": {
+      "kind": "ZipArchive",
+      "path": "C:\\Program Files\\LeoCAD\\library.bin",
+      "resolvedBy": "LeoCAD library.bin fallback",
+      "updateTag": "Configuration UPDATE 2025-08-04",
+      "sha256": "13703b0eb55575b88b6a677c7b33c394246010af31d74adbc38ea74abc839633",
+      "sizeBytes": 136066722,
+      "fileCount": 69578
+    },
+    "shadowLibrary": {
+      "path": "\u003Crepo\u003E/Library/LDCadShadowLibrary",
+      "commit": "15aa1e718b6a8da37d24fc7af5e52e262c041bfb",
+      "partFiles": 4164,
+      "primitiveFiles": 87
+    }
+  },
+  "counts": {
+    "physicalSubfileLines": 4385,
+    "logicalPartInstances": 3928,
+    "distinctLogicalParts": 146,
+    "submodelReferences": 69,
+    "physicalInlineGeometryLines": {
+      "type2": 997,
+      "type3": 683,
+      "type4": 4122,
+      "type5": 7433
+    },
+    "expandedInlineGeometryLines": {
+      "type3": 116,
+      "type4": 3062,
+      "type5": 6806
+    }
+  },
+  "resolution": {
+    "unresolvedCount": 0,
+    "ambiguousCount": 0,
+    "parseIssueCount": 0,
+    "unresolved": [],
+    "ambiguous": [],
+    "parseIssues": []
+  },
+  "shadow": {
+    "byUniquePart": {
+      "direct": 22,
+      "inherited": 46,
+      "directAndInherited": 76,
+      "none": 2
+    },
+    "byInstance": {
+      "direct": 197,
+      "inherited": 761,
+      "directAndInherited": 2965,
+      "none": 5
+    },
+    "featureTypeHistogram": {
+      "SNAP_CLP": 11,
+      "SNAP_CYL": 338,
+      "SNAP_GEN": 5,
+      "SNAP_INCL": 59
+    },
+    "totalDirectFeatures": 173,
+    "totalInheritedFeatures": 240,
+    "snapClearCount": 46,
+    "mirroredChildReferences": 4512,
+    "scaledChildReferences": 10873,
+    "highUseUncoveredParts": [
+      {
+        "part": "15413.dat",
+        "instances": 4
+      },
+      {
+        "part": "42055 - 61254.dat",
+        "instances": 1
+      }
+    ],
+    "parts": [
+      {
+        "part": "10197.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "10928.dat",
+        "instances": 5,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "11214.dat",
+        "instances": 60,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "11478.dat",
+        "instances": 6,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "11946.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 3,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "11947.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "14720.dat",
+        "instances": 5,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "15100.dat",
+        "instances": 35,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "15413.dat",
+        "instances": 4,
+        "coverage": "None",
+        "directFeatures": 0,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "15458.dat",
+        "instances": 21,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 4,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "15462.dat",
+        "instances": 10,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18651.dat",
+        "instances": 28,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18654.dat",
+        "instances": 5,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18939.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18945.dat",
+        "instances": 4,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18946.dat",
+        "instances": 22,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18947.dat",
+        "instances": 4,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "18948.dat",
+        "instances": 7,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "22961.dat",
+        "instances": 4,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "24116.dat",
+        "instances": 4,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "2412b.dat",
+        "instances": 8,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "2780.dat",
+        "instances": 719,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3023.dat",
+        "instances": 11,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3032.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "30367c.dat",
+        "instances": 32,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 5,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "30374.dat",
+        "instances": 1,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3062b.dat",
+        "instances": 80,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32002.dat",
+        "instances": 34,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32006.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 5,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32009.dat",
+        "instances": 12,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32013.dat",
+        "instances": 35,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32014.dat",
+        "instances": 17,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32016.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32017.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32034.dat",
+        "instances": 12,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32039.dat",
+        "instances": 3,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 3,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32054.dat",
+        "instances": 79,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32056.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32062.dat",
+        "instances": 42,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32063.dat",
+        "instances": 8,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32065.dat",
+        "instances": 3,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32072.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32073.dat",
+        "instances": 67,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32123a.dat",
+        "instances": 39,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32140.dat",
+        "instances": 38,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32184.dat",
+        "instances": 31,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32198.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32249.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32269.dat",
+        "instances": 11,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32270.dat",
+        "instances": 25,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32271.dat",
+        "instances": 9,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32278.dat",
+        "instances": 85,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32291.dat",
+        "instances": 13,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32316.dat",
+        "instances": 125,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32348.dat",
+        "instances": 9,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32449.dat",
+        "instances": 8,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32494.dat",
+        "instances": 5,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32523.dat",
+        "instances": 97,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32524.dat",
+        "instances": 68,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32525.dat",
+        "instances": 66,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32526.dat",
+        "instances": 57,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32556.dat",
+        "instances": 17,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "32557.dat",
+        "instances": 2,
+        "coverage": "Direct",
+        "directFeatures": 3,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3648b.dat",
+        "instances": 2,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3673.dat",
+        "instances": 19,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3701.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3705.dat",
+        "instances": 12,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3706.dat",
+        "instances": 5,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3707.dat",
+        "instances": 7,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3708.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3713.dat",
+        "instances": 53,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3737.dat",
+        "instances": 3,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "3749.dat",
+        "instances": 3,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "40490.dat",
+        "instances": 27,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "41239.dat",
+        "instances": 18,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "41677.dat",
+        "instances": 18,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42003.dat",
+        "instances": 51,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 13971.dat",
+        "instances": 13,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 18938.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 23948.dat",
+        "instances": 3,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 24120.dat",
+        "instances": 8,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 24121.dat",
+        "instances": 14,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 24316.dat",
+        "instances": 4,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 4185.dat",
+        "instances": 32,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 51739.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 55615.dat",
+        "instances": 24,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42055 - 61254.dat",
+        "instances": 1,
+        "coverage": "None",
+        "directFeatures": 0,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "42610.dat",
+        "instances": 5,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "4274.dat",
+        "instances": 39,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "43093.dat",
+        "instances": 162,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "43857.dat",
+        "instances": 34,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "44294.dat",
+        "instances": 11,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "44809.dat",
+        "instances": 2,
+        "coverage": "Direct",
+        "directFeatures": 3,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "4519.dat",
+        "instances": 39,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "4716.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "48989.dat",
+        "instances": 12,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "50746.dat",
+        "instances": 24,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "55013.dat",
+        "instances": 9,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "56145.dat",
+        "instances": 4,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "57518.dat",
+        "instances": 204,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 4,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "57520.dat",
+        "instances": 8,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 7,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "58119.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 19,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "58121.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 10,
+        "snapClears": 3,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "58124c01.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 5,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "59426.dat",
+        "instances": 9,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "59443.dat",
+        "instances": 51,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6020.dat",
+        "instances": 4,
+        "coverage": "Direct",
+        "directFeatures": 5,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "60483.dat",
+        "instances": 29,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "60484.dat",
+        "instances": 15,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "60485.dat",
+        "instances": 14,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6141.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "61904.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "61927c01.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 8,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6231.dat",
+        "instances": 8,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "62462.dat",
+        "instances": 12,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "62519.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "62520.dat",
+        "instances": 4,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "63869.dat",
+        "instances": 15,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 4,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "64178.dat",
+        "instances": 3,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 9,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "64179.dat",
+        "instances": 53,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 4,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "64782.dat",
+        "instances": 5,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 4,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6536.dat",
+        "instances": 37,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6558.dat",
+        "instances": 457,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6587.dat",
+        "instances": 9,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6589.dat",
+        "instances": 12,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6629.dat",
+        "instances": 13,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6632.dat",
+        "instances": 35,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6636.dat",
+        "instances": 2,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "6641.dat",
+        "instances": 4,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "76019.dat",
+        "instances": 3,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "84954.dat",
+        "instances": 1,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 3,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87082.dat",
+        "instances": 20,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87083.dat",
+        "instances": 20,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87087.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87407.dat",
+        "instances": 19,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87408.dat",
+        "instances": 6,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 3,
+        "inheritedFeatures": 2,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87761.dat",
+        "instances": 1,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "87994.dat",
+        "instances": 1,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "92906.dat",
+        "instances": 5,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "92907.dat",
+        "instances": 4,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 2,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "94925.dat",
+        "instances": 22,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "98138.dat",
+        "instances": 4,
+        "coverage": "Inherited",
+        "directFeatures": 0,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "99008.dat",
+        "instances": 17,
+        "coverage": "Direct",
+        "directFeatures": 1,
+        "inheritedFeatures": 0,
+        "snapClears": 1,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "99009.dat",
+        "instances": 2,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 1,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "99010.dat",
+        "instances": 2,
+        "coverage": "Direct",
+        "directFeatures": 2,
+        "inheritedFeatures": 0,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      },
+      {
+        "part": "99773.dat",
+        "instances": 8,
+        "coverage": "DirectAndInherited",
+        "directFeatures": 2,
+        "inheritedFeatures": 1,
+        "snapClears": 0,
+        "hasUnresolvedGeometry": false
+      }
+    ]
+  }
+}

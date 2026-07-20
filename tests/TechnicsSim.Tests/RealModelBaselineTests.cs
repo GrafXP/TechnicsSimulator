@@ -17,9 +17,15 @@ public sealed class RealModelBaselineTests
     public static TheoryData<string, int, int, int, int> Baseline => new()
     {
         // model file, MPD sections, physical type-1 lines, logical instances, distinct parts
+        //
+        // Note that logical instances sit above the physical line count for 8275 (submodels are
+        // referenced more than once) and below it for the 42xxx models (their MPD section lists
+        // include embedded parts and primitives whose internal type-1 lines are physical lines,
+        // but which logical expansion correctly stops at). Both directions are expected.
         { "8275-1.mpd", 157, 3021, 3029, 138 },
-        { "8458 - Silver Truck (B).mpd", 29, 2093, 2068, 116 },
-        { "8458 - Street Sensation (Web).mpd", 50, 2289, 2240, 117 },
+        { "42055-1.mpd", 79, 4385, 3928, 146 },
+        { "42100-1.mpd", 186, 8655, 7279, 183 },
+        { "42121-1.mpd", 57, 1215, 576, 107 },
     };
 
     [RealLibraryTheory]
@@ -64,12 +70,30 @@ public sealed class RealModelBaselineTests
     [RealLibraryFact]
     public void CountsInlineGeometrySeparatelyFromExpandedGeometry()
     {
-        // PLAN.md records 11,576 physical conditional lines for the Silver model. The expanded
-        // figure is higher because a spring submodel is referenced more than once.
-        var model = Load("8458 - Silver Truck (B).mpd");
+        // 42055 is the only supplied model carrying generated hose/spring fallback meshes. The
+        // expanded figure is lower than the physical one because part of that inline geometry
+        // lives in sections the root never references; counting it as drawn would overstate the
+        // render load. Both numbers are pinned so either one drifting is caught.
+        var model = Load("42055-1.mpd");
 
-        Assert.Equal(11576, model.PhysicalGeometryLineCounts[5]);
-        Assert.True(model.Expansion.ExpandedConditionalLines >= 11576);
+        Assert.Equal(7433, model.PhysicalGeometryLineCounts[5]);
+        Assert.Equal(6806, model.Expansion.ExpandedConditionalLines);
+    }
+
+    [RealLibraryFact]
+    public void LeavesUnreferencedInlineGeometryOutOfTheExpandedScene()
+    {
+        // 42100 and 42121 both hold inline geometry that is entirely unreachable from their
+        // roots. The distinction matters for the renderer, so it is pinned rather than assumed.
+        foreach (var fileName in new[] { "42100-1.mpd", "42121-1.mpd" })
+        {
+            var model = Load(fileName);
+
+            Assert.True(
+                model.PhysicalGeometryLineCounts[5] > 0,
+                $"{fileName} was expected to contain physical conditional lines.");
+            Assert.Equal(0, model.Expansion.ExpandedConditionalLines);
+        }
     }
 
     /// <summary>
@@ -84,7 +108,7 @@ public sealed class RealModelBaselineTests
         var model = Load("8275-1.mpd");
         var probe = new ShadowCoverageProbe(model.Resolver, TestEnvironment.Shadow!);
 
-        // 24-tooth gear, 12-tooth double bevel gear, and worm: no direct shadow file, but each
+        // 8-tooth gear, 12-tooth double bevel gear, and worm: no direct shadow file, but each
         // reaches an axle-hole primitive that carries one.
         foreach (var part in new[] { "3647.dat", "32270.dat", "4716.dat" })
         {
@@ -94,18 +118,29 @@ public sealed class RealModelBaselineTests
             Assert.True(coverage.InheritedFeatureCount > 0, $"{part} inherited no features.");
         }
 
-        // The Power Functions motor housings have no shadow data by either route. That is the
-        // gap the Phase 3 mechanics catalog exists to fill, and it should stay visible.
-        foreach (var motorPart in new[] { "58149.dat", "58150.dat" })
+        // The Power Functions Medium Motor reaches features by inheritance rather than a direct
+        // shadow file. Those features locate the housing, not the output shaft's rotation axis
+        // or direction, so Phase 3 still has to supply motor semantics from the catalog.
+        var motor = probe.Probe("58120.dat");
+        Assert.Equal(ShadowCoverage.Inherited, motor.Coverage);
+        Assert.Equal(7, motor.InheritedFeatureCount);
+
+        // The infra-red receiver lens and switch have no shadow data by either route. They are
+        // not drivetrain parts, but they are the model's only fully uncovered parts, so pinning
+        // them keeps the "uncovered" set honest instead of quietly growing.
+        foreach (var receiverPart in new[] { "58149.dat", "58150.dat" })
         {
-            Assert.Equal(ShadowCoverage.None, probe.Probe(motorPart).Coverage);
+            Assert.Equal(ShadowCoverage.None, probe.Probe(receiverPart).Coverage);
         }
     }
 
-    [ShadowFact]
-    public void EveryPartUsedByTheModelsIsProbableWithoutUnresolvedGeometry()
+    [ShadowTheory]
+    [MemberData(nameof(Baseline))]
+    public void EveryPartUsedByTheModelsIsProbableWithoutUnresolvedGeometry(
+        string fileName, int sections, int physicalLines, int logicalInstances, int distinctParts)
     {
-        var model = Load("8275-1.mpd");
+        _ = (sections, physicalLines, logicalInstances, distinctParts);
+        var model = Load(fileName);
         var probe = new ShadowCoverageProbe(model.Resolver, TestEnvironment.Shadow!);
 
         var broken = model.Expansion.PartUsage.Keys

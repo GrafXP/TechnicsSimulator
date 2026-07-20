@@ -65,8 +65,8 @@ public sealed class PartMeshBuilder
     /// Builds the geometry written directly into a model's own sections, stopping wherever a
     /// logical part begins.
     ///
-    /// This is the generated fallback mesh for LDCad hoses and springs: the 8458 models carry
-    /// tens of thousands of such lines. The <c>PATH_*</c> and <c>SPRING_*</c> generator metas
+    /// This is the generated fallback mesh for LDCad hoses and springs: 42055 carries over
+    /// thirteen thousand such lines. The <c>PATH_*</c> and <c>SPRING_*</c> generator metas
     /// are deliberately ignored, so this geometry is drawn exactly once and is not
     /// double-instantiated alongside a generated equivalent.
     ///

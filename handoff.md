@@ -5,7 +5,9 @@
 > follow-up issues are now fixed: transparent context uses single-pass weighted OIT, opacity
 > changes no longer rebuild the scene, mechanics rows zoom to their combined instance bounds,
 > and viewport gestures are right-drag rotate / middle-drag pan / wheel zoom. The solution builds
-> cleanly and all 206 tests pass. The investigation below is retained as historical context.
+> cleanly. Phase 4 now also exposes persistent animation controls, an explicit Solution graph,
+> exact ratio/conflict diagnostics, and manual driving from any selected gear or shaft. The
+> investigation below is retained as historical context.
 
 ## Original request
 In the viewer's **Mechanics** tab, the user sees a list of detected mechanical parts (gear

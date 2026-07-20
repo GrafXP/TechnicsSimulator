@@ -350,6 +350,17 @@ public sealed class SceneAndSelectionTests
         Assert.True(viewModel.CanAnimate);
         Assert.Contains("15 of 109 shafts solved", viewModel.AnimationStatus);
         Assert.Equal("All reviewed drivers (4)", viewModel.SelectedAnimationInput?.DisplayName);
+        Assert.Equal(4, viewModel.Solution.Roots.Count);
+        Assert.Equal(15, viewModel.Solution.SolvedCount);
+
+        var unsolved = viewModel.Solution.UnsolvedShafts.First(row => !row.HighlightInstanceIds.IsEmpty);
+        viewModel.Solution.Select(unsolved);
+        Assert.True(viewModel.CanDriveSelection);
+        Assert.Equal(unsolved.HighlightInstanceIds, renderer.ZoomedInstances);
+
+        viewModel.DriveSelection();
+        Assert.Equal(unsolved.ShaftId, viewModel.SelectedAnimationInput?.Inputs[0].ShaftId);
+        Assert.True(viewModel.CanAnimate);
 
         viewModel.AnimationTurns = 0.25;
         Assert.NotEmpty(renderer.InstanceTransforms);
@@ -358,9 +369,13 @@ public sealed class SceneAndSelectionTests
         viewModel.SelectAt(new Point(10, 10));
         Assert.Contains("omega", viewModel.SelectionDetail);
 
+        viewModel.DriveSelection();
+        Assert.StartsWith("Manual input:", viewModel.SelectedAnimationInput?.DisplayName);
+        Assert.True(viewModel.CanAnimate);
+
         viewModel.ToggleAnimation();
         viewModel.AdvanceAnimation(0.5);
-        Assert.True(viewModel.AnimationTurns > 0.25);
+        Assert.True(viewModel.AnimationTurns > 0);
     }
 
     [Fact]

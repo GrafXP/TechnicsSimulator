@@ -130,7 +130,7 @@ Run the viewer:
 dotnet run --project src/TechnicsSim.Wpf
 ```
 
-It opens the first model in `Models/` and lets you orbit, select parts, and inspect the tree. Right-drag rotates, middle-drag pans, and the mouse wheel zooms; left-click selects. Clicking a part shows its full hierarchical instance ID, shaft, and solved ratio where applicable, while the tree and viewport select each other. The drivetrain toolbar selects one or all reviewed drivers, plays or pauses the animation, and scrubs one input-shaft turn. `--model <path>`, `--diagnostics`, and `--edges` set the startup state so a specific view can be reproduced without clicking through the UI.
+It opens the reviewed 8275 demonstration by default and lets you orbit, select parts, and inspect the tree. Right-drag rotates, middle-drag pans, and the mouse wheel zooms; left-click selects. Clicking a part shows its full hierarchical instance ID, shaft, and solved ratio where applicable, while the tree and viewport select each other. The animation toolbar is always visible: choose one or all reviewed drivers, or select any gear/shaft member and click **Drive selection** to make that shaft a temporary input, then use Play or scrub one input-shaft turn. The **Solution** tab displays the driver-rooted solved graph, every gear constraint, exact conflicts, and unsolved shafts; clicking any of them highlights and frames its parts. `--model <path>`, `--diagnostics`, and `--edges` set the startup state so a specific view can be reproduced without clicking through the UI.
 
 Audit a model from the command line:
 

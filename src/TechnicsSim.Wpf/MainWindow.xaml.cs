@@ -77,10 +77,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Load the first model straight away so the window is never an empty grey box.
+        // Open the reviewed MVP drivetrain by default. Alphabetical order starts with 42055,
+        // whose motor currently ends at an unsupported output, hiding the validated workflow.
         if (choices.Count > 0)
         {
-            ModelSelector.SelectedIndex = 0;
+            var reference = choices.FindIndex(choice =>
+                choice.Name.StartsWith("8275", StringComparison.OrdinalIgnoreCase));
+            ModelSelector.SelectedIndex = reference >= 0 ? reference : 0;
         }
     }
 
@@ -113,6 +116,12 @@ public partial class MainWindow : Window
     {
         _animationTimer.Stop();
         _viewModel.ResetAnimationPosition();
+    }
+
+    private void OnDriveSelection(object sender, RoutedEventArgs e)
+    {
+        _animationTimer.Stop();
+        _viewModel.DriveSelection();
     }
 
     private void OnAnimationTick(object? sender, EventArgs e)
@@ -174,6 +183,22 @@ public partial class MainWindow : Window
         if (e.NewValue is ModelTreeNode node)
         {
             _viewModel.SelectedNode = node;
+        }
+    }
+
+    private void OnSolutionNodeSelected(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is IDrivetrainSolutionItem item)
+        {
+            _viewModel.Solution.Select(item);
+        }
+    }
+
+    private void OnSolutionRowClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is FrameworkElement { DataContext: IDrivetrainSolutionItem item })
+        {
+            _viewModel.Solution.Select(item);
         }
     }
 

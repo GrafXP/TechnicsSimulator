@@ -87,32 +87,41 @@
             </StackPanel>
         </Border>
 
-        <Border DockPanel.Dock="Top" Background="#252526" Padding="8,5"
-                Visibility="{Binding HasAnimationInputs, Converter={StaticResource BoolToVisibility}}">
+        <Border DockPanel.Dock="Top" Background="#252526" Padding="8,5">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="230" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="180" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Drive:" VerticalAlignment="Center" Margin="0,0,6,0" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding AnimationInputs}"
                           SelectedItem="{Binding SelectedAnimationInput}"
-                          DisplayMemberPath="DisplayName" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Content="{Binding PlayPauseLabel}" Click="OnToggleAnimation"
+                          DisplayMemberPath="DisplayName" VerticalAlignment="Center"
+                          IsEnabled="{Binding HasAnimationInputs}"
+                          ToolTip="Choose reviewed motors or a shaft added with Drive selection." />
+                <Button Grid.Column="2" Content="Drive selection" Click="OnDriveSelection"
+                        IsEnabled="{Binding CanDriveSelection}" Margin="8,0,6,0"
+                        ToolTip="Use the selected gear or shaft part as a temporary unit-speed input." />
+                <TextBlock Grid.Column="3" Text="{Binding SelectedDriveTarget}" Style="{StaticResource Dim}"
+                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Grid.Column="4" Content="{Binding PlayPauseLabel}" Click="OnToggleAnimation"
                         IsEnabled="{Binding CanAnimate}" Margin="8,0,6,0" />
-                <Button Grid.Column="3" Content="Reset" Click="OnResetAnimation" />
-                <Slider Grid.Column="4" Minimum="0" Maximum="1" Margin="8,0"
+                <Button Grid.Column="5" Content="Reset" Click="OnResetAnimation"
+                        IsEnabled="{Binding CanAnimate}" />
+                <Slider Grid.Column="6" Minimum="0" Maximum="1" Margin="8,0"
                         Value="{Binding AnimationTurns, Mode=TwoWay}"
                         IsEnabled="{Binding CanAnimate}" VerticalAlignment="Center"
                         ToolTip="Input-shaft turns from the model's initial pose." />
-                <TextBlock Grid.Column="5" Text="{Binding AnimationTurnsLabel}" Style="{StaticResource Mono}"
+                <TextBlock Grid.Column="7" Text="{Binding AnimationTurnsLabel}" Style="{StaticResource Mono}"
                            VerticalAlignment="Center" MinWidth="82" />
-                <TextBlock Grid.Column="6" Text="{Binding AnimationStatus}" Style="{StaticResource Dim}"
+                <TextBlock Grid.Column="8" Text="{Binding AnimationStatus}" Style="{StaticResource Dim}"
                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             </Grid>
         </Border>
@@ -304,6 +313,101 @@
                                                     <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}"
                                                                Foreground="#CE9178" />
                                                     <TextBlock Text="{Binding BoundaryReason}" Style="{StaticResource Dim}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Solution">
+                    <DockPanel Background="#252526">
+                        <Border DockPanel.Dock="Top" Background="#1E1E1E" Padding="8,6">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Solution.Summary}" Style="{StaticResource Mono}" />
+                                <TextBlock Text="Select a shaft below, then use Drive selection, Play, or the slider above."
+                                           Style="{StaticResource Dim}" Margin="0,5,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Solution.SolvedHeader}"
+                                           Style="{StaticResource SectionHeader}" />
+                                <TreeView ItemsSource="{Binding Solution.Roots}"
+                                          Background="#252526" Foreground="#DDDDDD" BorderThickness="0"
+                                          SelectedItemChanged="OnSolutionNodeSelected">
+                                    <TreeView.ItemContainerStyle>
+                                        <Style TargetType="TreeViewItem">
+                                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                        </Style>
+                                    </TreeView.ItemContainerStyle>
+                                    <TreeView.ItemTemplate>
+                                        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}"
+                                                           Foreground="#DCDCAA" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Dim}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+
+                                <TextBlock Text="{Binding Solution.ConstraintHeader}"
+                                           Style="{StaticResource SectionHeader}" />
+                                <ItemsControl ItemsSource="{Binding Solution.Constraints}"
+                                              PreviewMouseLeftButtonDown="OnSolutionRowClick">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#2A2A2C" BorderBrush="#3E3E42"
+                                                    BorderThickness="1" Padding="6" Margin="0,0,0,4"
+                                                    Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}"
+                                                               Foreground="#DCDCAA" />
+                                                    <TextBlock Text="{Binding Parts}" Style="{StaticResource Dim}" />
+                                                    <TextBlock Text="{Binding Status}" Style="{StaticResource Dim}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="{Binding Solution.ConflictHeader}"
+                                           Style="{StaticResource SectionHeader}" Foreground="#F48771" />
+                                <ItemsControl ItemsSource="{Binding Solution.Conflicts}"
+                                              PreviewMouseLeftButtonDown="OnSolutionRowClick">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#4A1F1F" BorderBrush="#F48771"
+                                                    BorderThickness="1" Padding="6" Margin="0,0,0,4"
+                                                    Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Message}" Style="{StaticResource Mono}" />
+                                                    <TextBlock Text="{Binding ExistingPath}" Style="{StaticResource Dim}" />
+                                                    <TextBlock Text="{Binding ProposedPath}" Style="{StaticResource Dim}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="{Binding Solution.UnsolvedHeader}"
+                                           Style="{StaticResource SectionHeader}" />
+                                <ItemsControl ItemsSource="{Binding Solution.UnsolvedShafts}" Margin="0,0,0,12"
+                                              PreviewMouseLeftButtonDown="OnSolutionRowClick">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#2A2A2C" BorderBrush="#3E3E42"
+                                                    BorderThickness="1" Padding="5" Margin="0,0,0,3"
+                                                    Cursor="Hand">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding ShaftId}" Style="{StaticResource Mono}" />
+                                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Dim}"
+                                                               Margin="8,0,0,0" />
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>

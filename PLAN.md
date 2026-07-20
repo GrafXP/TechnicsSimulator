@@ -269,7 +269,7 @@ Gate:
 
 ### Phase 4 - Solver and first end-to-end animation
 
-Status: complete. The exact solver and the WPF viewer consume the same reviewed shaft graph. The committed 8275 sidecar supplies four mutually consistent driver constraints, solving 15 of 109 shafts; the hand-checked medium-motor path reaches a worm wheel at `+1:72` through four meshes. The UI provides driver selection, play/pause/reset, a one-turn scrubber, and selected-shaft ratio diagnostics. Unsupported components and motor housings stay static. The CLI emits the same exact solution and reports both paths when constraints conflict.
+Status: complete. The exact solver and the WPF viewer consume the same reviewed shaft graph. The committed 8275 sidecar supplies four mutually consistent driver constraints, solving 15 of 109 shafts; the hand-checked medium-motor path reaches a worm wheel at `+1:72` through four meshes. The UI provides persistent driver/playback controls, manual driving from any selected gear or shaft, a one-turn scrubber, selected-shaft ratio diagnostics, and a Solution tab containing the solved propagation trees, graph edges, conflicts, and unsolved shafts. Unsupported components and motor housings stay static. The CLI emits the same exact solution and reports both paths when constraints conflict.
 
 Add exact pairwise ratio propagation, multiple drivers, conflict explanations, animation transforms, timeline/slider controls, and selected-shaft ratio readouts.
 

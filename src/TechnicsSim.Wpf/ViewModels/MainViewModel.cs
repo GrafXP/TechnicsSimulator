@@ -47,7 +47,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private AnimationInputChoice? _selectedAnimationInput;
     private double _animationTurns;
     private bool _isAnimationPlaying;
-    private string _animationStatus = "No solved drivetrain.";
+    private string _animationStatus = "Load a model to build and solve its drivetrain.";
     private bool _isBusy;
 
     public MainViewModel(ISceneRenderer renderer, string repositoryRoot)
@@ -55,10 +55,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _renderer = renderer;
         _repositoryRoot = repositoryRoot;
         Mechanics = new MechanicsPanelViewModel(HighlightFromPanel);
+        Solution = new DrivetrainSolutionViewModel(HighlightFromPanel);
     }
 
     /// <summary>The reviewable drivetrain and its sidecar editing surface.</summary>
     public MechanicsPanelViewModel Mechanics { get; }
+
+    /// <summary>The selected-input solution projected as shafts, edges, conflicts, and gaps.</summary>
+    public DrivetrainSolutionViewModel Solution { get; }
 
     public ObservableCollection<ModelTreeNode> Tree { get; } = [];
 
@@ -98,6 +102,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (Set(ref _selectedInstanceId, value))
             {
                 OnPropertyChanged(nameof(SelectionDetail));
+                OnPropertyChanged(nameof(CanDriveSelection));
+                OnPropertyChanged(nameof(SelectedDriveTarget));
             }
         }
     }
@@ -210,6 +216,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool HasMechanicalInstances => _mechanicalInstances.Length > 0;
 
     public bool HasAnimationInputs => AnimationInputs.Count > 0;
+
+    public bool CanDriveSelection => SelectedInstanceId is not null
+        && _shaftGraph?.ShaftForInstance(SelectedInstanceId) is not null;
+
+    public string SelectedDriveTarget => SelectedInstanceId is not null
+        && _shaftGraph?.ShaftForInstance(SelectedInstanceId) is { } shaft
+            ? $"selected: {shaft.ShaftId}"
+            : "select a gear or shaft part";
 
     public bool CanAnimate => _shaftSolution is { IsConsistent: true }
         && !_shaftAnimationPlan.Groups.IsEmpty;
@@ -364,11 +378,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Mechanics.Load(path, graph, model.Expansion, sidecar, effect);
                 _shaftGraph = graph;
                 _mechanicalInstances = graph.MechanicalInstanceIds();
+                Solution.Load(graph, null);
                 ConfigureAnimationInputs(graph, sidecar);
+            }
+            else
+            {
+                AnimationStatus = mechanics is null
+                    ? "No drivetrain graph: the LDCad shadow library is unavailable."
+                    : "No drivetrain graph: the mechanics catalog could not be loaded.";
+                Solution.Clear(AnimationStatus);
             }
 
             _renderer.SetMechanicalInstances(_mechanicalInstances);
             OnPropertyChanged(nameof(HasMechanicalInstances));
+            OnPropertyChanged(nameof(CanDriveSelection));
+            OnPropertyChanged(nameof(SelectedDriveTarget));
 
             Statistics =
                 $"{stats.Instances:N0} instances   {stats.InstancedModels:N0} batches   "
@@ -390,6 +414,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException)
         {
             Status = $"Failed to load {Path.GetFileName(path)}: {ex.Message}";
+            AnimationStatus = "Drivetrain unavailable because the model failed to load.";
+            Solution.Clear(AnimationStatus);
         }
         finally
         {
@@ -443,7 +469,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         OnPropertyChanged(nameof(HasAnimationInputs));
-        SelectedAnimationInput = AnimationInputs.FirstOrDefault();
+        var initial = AnimationInputs.FirstOrDefault();
+        if (initial is null)
+        {
+            AnimationStatus = $"Graph loaded: {graph.Shafts.Length:N0} shafts, but no motor has a keyed output shaft. "
+                + "Select a gear or shaft part and choose Drive selection.";
+            SelectedAnimationInput = null;
+        }
+        else
+        {
+            SelectedAnimationInput = initial;
+        }
     }
 
     private void SolveAnimation()
@@ -458,7 +494,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (_shaftGraph is null || SelectedAnimationInput is null)
         {
             _shaftSolution = null;
-            AnimationStatus = "No solved drivetrain.";
+            AnimationStatus = _shaftGraph is null
+                ? "Load a model to build and solve its drivetrain."
+                : "No driver selected. Select a gear or shaft part and choose Drive selection.";
+            if (_shaftGraph is not null)
+            {
+                Solution.Load(_shaftGraph, null);
+            }
         }
         else
         {
@@ -471,6 +513,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     + "unsupported mechanisms remain static."
                 : $"Animation stopped: {_shaftSolution.Conflicts.Length:N0} exact constraint conflict(s). "
                     + _shaftSolution.Conflicts[0].Message;
+            Solution.Load(_shaftGraph, _shaftSolution);
         }
 
         OnPropertyChanged(nameof(CanAnimate));
@@ -498,13 +541,41 @@ public sealed class MainViewModel : INotifyPropertyChanged
         AnimationInputs.Clear();
         _selectedAnimationInput = null;
         _animationTurns = 0;
-        AnimationStatus = "No solved drivetrain.";
+        AnimationStatus = "Load a model to build and solve its drivetrain.";
+        Solution.Clear();
         _renderer.SetInstanceTransforms(new Dictionary<string, System.Numerics.Matrix4x4>());
         OnPropertyChanged(nameof(SelectedAnimationInput));
         OnPropertyChanged(nameof(AnimationTurns));
         OnPropertyChanged(nameof(AnimationTurnsLabel));
         OnPropertyChanged(nameof(HasAnimationInputs));
         OnPropertyChanged(nameof(CanAnimate));
+        OnPropertyChanged(nameof(CanDriveSelection));
+        OnPropertyChanged(nameof(SelectedDriveTarget));
+    }
+
+    /// <summary>Makes the shaft under the current selection a temporary unit-speed input.</summary>
+    public void DriveSelection()
+    {
+        if (SelectedInstanceId is null
+            || _shaftGraph?.ShaftForInstance(SelectedInstanceId) is not { } shaft)
+        {
+            return;
+        }
+
+        var label = $"Manual input: {shaft.ShaftId}";
+        foreach (var prior in AnimationInputs
+            .Where(candidate => candidate.DisplayName.StartsWith("Manual input:", StringComparison.Ordinal))
+            .ToArray())
+        {
+            AnimationInputs.Remove(prior);
+        }
+
+        var choice = new AnimationInputChoice(
+            label,
+            [new ShaftInput(shaft.ShaftId, ExactRatio.One, label)]);
+        AnimationInputs.Insert(0, choice);
+        OnPropertyChanged(nameof(HasAnimationInputs));
+        SelectedAnimationInput = choice;
     }
 
     public void ToggleAnimation()

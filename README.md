@@ -48,14 +48,14 @@ The repository includes four LDraw MPDs in [Models/](Models/):
 
 | Model | MPD sections | Source type-1 lines | Expanded logical parts | Notable mechanisms |
 | --- | ---: | ---: | ---: | --- |
-| 8275 Motorized Bulldozer | 157 | 3,021 | 3,029 | Two motors, gears, worm, clutches, universal joints, sprockets, tracks |
-| 42055 Bucket Wheel Excavator | 79 | 4,385 | 3,928 | Dense gearbox, worm, clutch gears, changeover catches, turntables, hoses |
-| 42100 Liebherr R 9800 | 186 | 8,655 | 7,279 | Gears, turntables, universal joints, tracks |
-| 42121 Heavy-Duty Excavator | 57 | 1,215 | 576 | Gears, universal joints, tracks |
+| 8275 Motorized Bulldozer | 157 | 3,021 | 3,029 | Four motors, gears, worms, clutches, universal joints, sprockets, tracks |
+| 42055 Bucket Wheel Excavator | 79 | 4,385 | 3,928 | Motor, dense gearbox, worm, clutch gears, changeover catches, turntables, one rack, hoses |
+| 42100 Liebherr R 9800 | 186 | 8,655 | 7,279 | Gears, turntables, universal joints, linear actuators, tracks |
+| 42121 Heavy-Duty Excavator | 57 | 1,215 | 576 | Gears, universal joints, linear actuators, tracks |
 
 The distinction between source lines and logical parts matters, and it runs in both directions. The 8275 MPD embeds an unofficial LS70 track-link part and uses it 1,630 times; recursively expanding that part's rendering primitives produces tens of thousands of references, but those primitives are not separate LEGO parts. The 42xxx MPDs go the other way: their section lists include embedded parts and primitives, so they contain more source type-1 lines than the model has actual parts.
 
-8275 is the reference drivetrain for the MVP because it is the only supplied model with a motor.
+8275 is the reference drivetrain for the MVP because it has the most motors and the clearest worm-driven path. It is not the only motorized model: 42055 has one Power Functions XL motor too.
 
 ## MVP scope
 

@@ -48,10 +48,16 @@ The two columns move independently, in both directions, and neither ordering is 
 
 Other scope-relevant facts found in the supplied files:
 
-- 8275 uses 1,630 instances of the embedded LS70 track-link part, two Power Functions Medium Motors (58120), spur/bevel gears, two worms, 24-tooth clutch gears, universal joints, and sprockets. It stays the reference drivetrain for the MVP because it is the only supplied model with a motor.
-- No supplied model contains a 6573 differential or a gear rack. Differential constraints and rotary-to-linear racks are therefore no longer required by any shipped demonstration, and drop from the critical path to opportunistic Phase 5 work.
-- The new mechanism boundaries are turntables (99009, 28-tooth: two in 42055, four in 42100), 16-tooth clutch gears (18946, twenty-two in 42055), and transmission changeover catches (6641, four in 42055). Universal joints are now present in every model (62520/3712).
-- 42055 is the gear-density outlier and the best Phase 3 stress case after 8275: 25 twelve-tooth double bevels, 22 sixteen-tooth clutch gears, 22 reinforced sixteen-tooth, 11 twenty-tooth double bevels, and one worm.
+These facts come from a library-backed sweep of every distinct part in all four models, filtered by official description. Hand-written part-number greps are not trustworthy here and produced two wrong conclusions before the sweep replaced them; the catalog work in Phase 3 must start from the sweep, not from recall.
+
+- 8275 carries four motors, not two: two Power Functions Medium (58120) and two Power Functions XL (58121). It also has 1,630 instances of the embedded LS70 track-link part, two worms, 8- and 16-tooth spurs, bevels, 24-tooth clutch gears, universal joints, and two sprocket sizes (57519/57520).
+- 42055 also has a motor, one Power Functions XL (58121), so 8275 is not the only motorized model. 8275 stays the MVP reference drivetrain because it has the most motors and the clearest worm-driven path, not because it is unique.
+- No supplied model contains a 6573 differential. Multi-variable differential constraints leave the critical path entirely.
+- 42055 does contain one gear rack, 87761 (Gear Rack 1 x 7 with Pegholes and Axleholes). Rotary-to-linear support is therefore still required eventually, but a single instance in one model keeps it off the MVP path.
+- Linear actuators appear in 42055, 42100, and 42121 (61904 mounts, 92693/92695/92696 bodies, pistons, and axle actuators). These are prismatic mechanisms and stay unsupported boundaries for the MVP.
+- The mechanism boundaries needing explicit unsupported treatment are turntables (28-tooth 99009/99010 and 60-tooth 18938/18939), clutch gears (18946, 76019, 6542a), transmission changeover catches (6641, four in 42055), universal joints (62520/62519/3712/3326b, present in every model), and sprockets.
+- 42055 is the gear-density outlier and the best Phase 3 stress case after 8275: 25 twelve-tooth double bevels, 22 sixteen-tooth clutch gears, 22 reinforced sixteen-tooth, 19 twenty-tooth bevels with peghole, 12 twelve-tooth bevels, 11 twenty-tooth double bevels, a worm, and a 4-knob gear.
+- 42100 is the largest model and the widest gear variety, including the only 36-tooth double bevels (32498) and 34 twenty-tooth bevels with peghole.
 - 42055 carries the generated hose/spring fallback meshes: 7,433 physical conditional lines expanding to 6,806, plus 4,122 physical quads. 42100 and 42121 have inline geometry that is entirely unreferenced from their roots. The first renderer should draw the solid fallback geometry and may defer camera-dependent conditional edges.
 - The current shadow checkout has direct data for many critical parts, but not every one. For example, 3647, 32270, motors, and several clutch/worm parts have no direct shadow file and must obtain features through primitive inheritance or the mechanics catalog.
 
@@ -285,8 +291,9 @@ Ordered by what the supplied models actually contain, most-used first:
 4. Transmission changeover catches (6641) as selectable-path constraints, driven by 42055's gearbox.
 5. Steering/suspension closed-loop pose solving.
 6. Sprocket/track path animation and flexible-part abstractions.
-7. Differentials and rack-and-pinion using multi-variable and translational constraints. No supplied model needs these; build them only if a model that uses them is added.
-8. Torque/dynamics only as a distinct future subsystem; do not mix it into the velocity graph incrementally.
+7. Rack-and-pinion and linear actuators using translational degrees of freedom. One rack (87761 in 42055) and several actuators exist, so this is real but low-volume work.
+8. Differentials using multi-variable constraints. No supplied model contains one; build this only if a model that uses it is added.
+9. Torque/dynamics only as a distinct future subsystem; do not mix it into the velocity graph incrementally.
 
 ## Test strategy
 

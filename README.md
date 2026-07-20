@@ -113,7 +113,7 @@ See [PLAN.md](PLAN.md) for the reviewed technical design, delivery gates, data m
 - [x] Phase 0: solution, resolver, permanent audit CLI, and library bootstrap.
 - [x] Phase 1: loader and visual vertical slice.
 - [x] Phase 2: shadow features and connection diagnostics.
-- [ ] Phase 3: mechanics catalog, sidecars, and shaft graph.
+- [x] Phase 3: mechanics catalog, sidecars, and shaft graph.
 - [ ] Phase 4: solver and first validated drivetrain animation.
 
 ## Getting started
@@ -140,13 +140,32 @@ dotnet run --project tools/TechnicsSim.Cli -- inspect-model "Models/8275-1.mpd"
 dotnet run --project tools/TechnicsSim.Cli -- coverage "Models/8275-1.mpd" --json reports/8275.json
 dotnet run --project tools/TechnicsSim.Cli -- mesh-stats "Models/8275-1.mpd"
 dotnet run --project tools/TechnicsSim.Cli -- connections "Models/8275-1.mpd" --json reports/8275-connections.json
+dotnet run --project tools/TechnicsSim.Cli -- shafts "Models/8275-1.mpd" --json reports/8275-shafts.json
 ```
 
 `library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count. `mesh-stats` builds the whole render scene headlessly and reports batching, instancing, and triangle counts, so rendering claims can be checked in CI rather than eyeballed.
 
 `connections` replays effective shadow patches through the official part tree, places finite snap sections on logical instances, and emits span-aware mate candidates. Its JSON includes residuals, confidence, ambiguities, rejected scale/mirror inheritance, and the shadow line plus transform chain behind every feature. In the viewer, enable **Diagnostics** to see feature axes and section profiles; cyan is matched, orange unmatched, magenta ambiguous, and green lines mark unambiguous mate candidates. Selecting a part shows the named rule and residuals behind its first candidate.
 
-Exit codes are `0` for success, `1` for a configuration or usage error, and `2` when a model has unresolved references.
+`shafts` builds the rotary graph: it grows shaft assemblies from keyed connections only, mounts catalogued gears onto them, and proposes meshes with exact rational ratios. Every mesh reports tooth counts, the measured and predicted centre distance, the residual between them, face overlap, confidence, and the rule that produced it. Mechanisms the MVP will not solve — clutches, universal joints, turntables, sprockets, racks, and linear actuators — are listed as boundaries with the reason propagation stops, rather than being dropped or silently meshed.
+
+Mesh direction is never assumed. The sign comes from a contact-frame calculation, so it stays correct when a shaft axis happens to be stored the other way round; real 8275 geometry contains both orientations.
+
+Exit codes are `0` for success, `1` for a configuration or usage error, `2` when a model has unresolved references, and `3` when a sidecar override no longer matches the model it annotates.
+
+## Mechanics catalog and model sidecars
+
+The shadow library describes connection geometry, not tooth counts, pitch surfaces, motor outputs, or clutch behaviour. Two committed data layers supply the rest.
+
+[data/parts-mechanics.json](data/parts-mechanics.json) holds reusable part semantics for every drivetrain-relevant part in the four models. Every entry is attributed, and a test derives the toothed-part set from official LDraw descriptions and fails when a model uses one the catalog has missed, so adding a model surfaces the gap rather than skipping it.
+
+Two values in it were measured rather than assumed. Gear rotation axes come from each part's keyed axle feature, because gear parts do not share a local convention — 3647 lays its axle hole along Z while others use Y. The worm's pitch radius is 10 LDU, measured from the 8275 worm and 24-tooth pair sitting 40 LDU apart, which cross-checks against the module: 10 LDU is exactly the 8-tooth envelope, and `(8 + 24) * 1.25 = 40`, which is why a worm drops into 8-tooth spacing.
+
+`Models/<model>.mechanics.json` holds reviewed, model-specific corrections: ground selection, accepted or rejected mates and meshes, shaft joins and splits, clutch engagement, drivers, and unsupported annotations. Every override carries a reason, so the file records a review rather than unexplained tweaks.
+
+Overrides are fingerprinted by part name and rounded world position. Instance IDs encode positions in the model tree, so editing a model can silently repoint an ID at a different part, and a stale override is worse than a missing one because it still looks reviewed. Mismatches are reported against both the recorded and current values.
+
+The **Mechanics** tab in the viewer edits all of this directly — accept or reject meshes, set clutches locked or free, name drivers — and exports the same file the CLI reads. Selecting any row highlights that instance in the 3D view and the model tree.
 
 ## External data setup
 

@@ -5,3 +5,5 @@ obj/
 *.user
 *.suo
 
+# Ad-hoc CLI report output. Committed baselines live in tests/TechnicsSim.Tests/Golden/.
+/reports/

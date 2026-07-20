@@ -5,7 +5,7 @@ TechnicsSimulator is an experimental kinematic simulator for LEGO Technic models
 Most LDraw applications stop at rendering. This project aims to go further: infer axles, bearings, keyed connections, shafts, and gear meshes from model geometry, then propagate rotation through the reconstructed drivetrain with explainable gear ratios.
 
 > [!IMPORTANT]
-> The project is currently in the research and design phase. The models, technical audit, and implementation plan are present, but there is not yet a runnable application.
+> Phase 0 is complete: the LDraw parser, resolver, logical-part expander, and audit CLI are implemented and pinned by tests. There is not yet a viewer or any mechanism simulation.
 
 ## Project goals
 
@@ -84,12 +84,14 @@ Unsupported mechanisms will remain static and be labeled in the UI.
 The implementation targets .NET 8 and Windows WPF:
 
 ```text
-src/TechnicsSim.LDraw/       Parsing, file sources, transforms, colors, geometry
-src/TechnicsSim.Mechanics/   Snap features, matching, catalog, graph, solver
-src/TechnicsSim.Wpf/         Helix-based viewer and diagnostics UI
-tools/TechnicsSim.Cli/       Coverage reports and graph diagnostics
-tests/TechnicsSim.Tests/     Fixtures, golden reports, and integration tests
+src/TechnicsSim.LDraw/       Parsing, file sources, transforms, colors, geometry   [exists]
+src/TechnicsSim.Mechanics/   Snap features, matching, catalog, graph, solver       [phase 2]
+src/TechnicsSim.Wpf/         Helix-based viewer and diagnostics UI                 [phase 1]
+tools/TechnicsSim.Cli/       Coverage reports and graph diagnostics                [exists]
+tests/TechnicsSim.Tests/     Fixtures, golden reports, and integration tests       [exists]
 ```
+
+Report building lives in the core library rather than the CLI, so the command line and the eventual diagnostics UI cannot drift into emitting different numbers for the same model.
 
 The renderer is planned around [HelixToolkit.Wpf.SharpDX](https://www.nuget.org/packages/HelixToolkit.Wpf.SharpDX/3.1.2). Core parsing and mechanics will remain independent of WPF so they can be tested and used from the CLI.
 
@@ -102,50 +104,82 @@ See [PLAN.md](PLAN.md) for the reviewed technical design, delivery gates, data m
 - [x] Review LDraw and LDCad shadow semantics.
 - [x] Write the implementation and verification plan.
 - [x] Establish the external shadow-library source and revision.
-- [ ] Phase 0: solution, resolver, permanent audit CLI, and library bootstrap.
+- [x] Phase 0: solution, resolver, permanent audit CLI, and library bootstrap.
 - [ ] Phase 1: loader and visual vertical slice.
 - [ ] Phase 2: shadow features and connection diagnostics.
 - [ ] Phase 3: mechanics catalog, sidecars, and shaft graph.
 - [ ] Phase 4: solver and first validated drivetrain animation.
 
+## Getting started
+
+```powershell
+./scripts/bootstrap-libraries.ps1          # fetch the shadow library, locate a parts library
+dotnet build
+dotnet test
+```
+
+Then audit a model:
+
+```powershell
+dotnet run --project tools/TechnicsSim.Cli -- library-info
+dotnet run --project tools/TechnicsSim.Cli -- inspect-model "Models/8275-1.mpd"
+dotnet run --project tools/TechnicsSim.Cli -- coverage "Models/8275-1.mpd" --json reports/8275.json
+```
+
+`library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count.
+
+Exit codes are `0` for success, `1` for a configuration or usage error, and `2` when a model has unresolved references.
+
 ## External data setup
 
-The official parts library and shadow library are intentionally not committed because they are independently maintained datasets.
+The official parts library and shadow library are intentionally not committed because they are independently maintained datasets. `scripts/bootstrap-libraries.ps1` sets both up and prints the revisions in use; the rest of this section describes what it does.
 
 ### LDraw parts library
 
-Future tools will accept one of the following:
+Tools accept any of the following, in this resolution order:
 
-- A current `complete.zip` from the [LDraw library updates page](https://library.ldraw.org/updates), placed at `Library/complete.zip`.
-- An extracted LDraw library directory.
-- LeoCAD's `library.bin`, which is a ZIP containing an `ldraw/` tree.
-- A path supplied through `TECHNICSSIM_LDRAW_PATH` or a CLI option.
+1. A path supplied through `--ldraw` or `TECHNICSSIM_LDRAW_PATH`.
+2. A current `complete.zip` from the [LDraw library updates page](https://library.ldraw.org/updates), placed at `Library/complete.zip`, or an extracted tree at `Library/LDraw/`.
+3. LeoCAD's `library.bin`, which is a ZIP containing an `ldraw/` tree.
+
+ZIP sources are read in place, so a 480+ MB library never has to be extracted to inspect a few hundred parts. Run `./scripts/bootstrap-libraries.ps1 -Source Download` to fetch a current `complete.zip`; LeoCAD's snapshot works for local development but is not a tracked release.
 
 ### LDCad Shadow Library
 
-Clone the shadow data into the ignored `Library/` directory:
+The bootstrap script clones this into the ignored `Library/` directory. Manually:
 
 ```powershell
 New-Item -ItemType Directory -Path Library -Force
 git clone https://github.com/RolandMelkert/LDCadShadowLibrary.git Library/LDCadShadowLibrary
 ```
 
-The initial project audit used shadow commit `15aa1e718b6a8da37d24fc7af5e52e262c041bfb` from 2026-03-15. Reports and releases will record the exact official-library version and shadow revision used.
+The project audit and the committed golden reports use shadow commit `15aa1e718b6a8da37d24fc7af5e52e262c041bfb` from 2026-03-15. Every report records the official-library version and shadow revision that produced it.
 
 Do not commit `Library/`; it is covered by [.gitignore](.gitignore).
 
 ## Testing philosophy
 
-The mechanics must be explainable and independently verifiable. Planned tests include:
+The mechanics must be explainable and independently verifiable.
 
-- Nested LDraw matrix and color-inheritance fixtures.
+Implemented so far:
+
+- Line-type, MPD-splitting, and header-classification fixtures.
+- Nested matrix composition and color-inheritance fixtures, which lock multiplication order numerically rather than by visual inspection.
+- Resolution ordering fixtures, including an MPD-local `.dat` that must outrank the official library.
+- Cycle detection, stable hierarchical instance IDs, and shadow-meta field parsing.
+- Baseline tests pinning all three MPDs to the audited section, line, instance, and part counts.
+- Golden coverage reports per model, compared with source paths excluded so a diff means a real interpretation change.
+
+Planned:
+
 - Shadow inheritance, grid, mirror, scale, include, and clear behavior.
 - An axle through a round beam hole, expected to form a bearing.
 - An axle through a gear's axle hole, expected to form a keyed connection.
 - Overlapping axial spans whose feature origins do not coincide.
 - 8:24 and three-gear ratio fixtures with exact sign composition.
-- Golden diagnostic reports for the supplied MPDs.
 - Hand-checked ratios for the first animated 8275 drivetrain.
+
+Tests that need the external libraries skip with an explicit reason when those are absent, so a clean checkout still runs the full fixture suite. Golden baselines are regenerated only with `TECHNICSSIM_UPDATE_GOLDEN=1`, never as a side effect.
 
 Every inferred feature and constraint will retain provenance so the CLI and UI can answer why it exists.
 

@@ -20,7 +20,10 @@ internal sealed class FakeRenderer : ISceneRenderer
 {
     public RenderScene? Loaded { get; private set; }
 
-    public string? Highlighted { get; private set; }
+    public IReadOnlyCollection<string> HighlightedSet { get; private set; } = [];
+
+    /// <summary>The primary highlighted instance, which is all most tests care about.</summary>
+    public string? Highlighted => HighlightedSet.FirstOrDefault();
 
     public string? NextPick { get; set; }
 
@@ -30,7 +33,15 @@ internal sealed class FakeRenderer : ISceneRenderer
 
     public bool ShowDiagnostics { get; set; }
 
+    public bool EmphasizeMechanics { get; set; }
+
+    public double GhostOpacity { get; set; } = 0.2;
+
+    public IReadOnlyCollection<string> MechanicalInstances { get; private set; } = [];
+
     public ConnectionAnalysis? Diagnostics { get; private set; }
+
+    public IReadOnlyCollection<string> ZoomedInstances { get; private set; } = [];
 
     public RenderStatistics Load(RenderScene scene)
     {
@@ -50,15 +61,17 @@ internal sealed class FakeRenderer : ISceneRenderer
 
     public string? PickInstance(Point viewportPoint) => NextPick;
 
-    public void Highlight(string? instanceId) => Highlighted = instanceId;
+    public void Highlight(IReadOnlyCollection<string> instanceIds) => HighlightedSet = instanceIds;
+
+    public void SetMechanicalInstances(IEnumerable<string> instanceIds) =>
+        MechanicalInstances = instanceIds.ToList();
 
     public void ZoomToFit()
     {
     }
 
-    public void ZoomToInstance(string instanceId)
-    {
-    }
+    public void ZoomToInstances(IReadOnlyCollection<string> instanceIds) =>
+        ZoomedInstances = instanceIds;
 }
 
 public sealed class SceneAndSelectionTests
@@ -273,6 +286,40 @@ public sealed class SceneAndSelectionTests
 
         Assert.Equal("main.ldr@7", viewModel.SelectedInstanceId);
         Assert.Equal("main.ldr@7", renderer.Highlighted);
+    }
+
+    [Fact]
+    public void ZoomToSelectionFramesTheWholeSelectedSet()
+    {
+        var renderer = new FakeRenderer();
+        var viewModel = new MainViewModel(renderer, TestPaths.RepositoryRoot)
+        {
+            SelectedNode = new ModelTreeNode("brick.dat", "main.ldr@7"),
+        };
+
+        viewModel.ZoomToSelection();
+
+        Assert.Equal(["main.ldr@7"], renderer.ZoomedInstances);
+    }
+
+    [Fact]
+    public void IsolationStaysOffUntilThereIsADrivetrainToIsolate()
+    {
+        var renderer = new FakeRenderer();
+        var viewModel = new MainViewModel(renderer, TestPaths.RepositoryRoot);
+
+        // Without a catalog or shadow library there is no graph, so the checkbox has nothing to
+        // act on and fading the whole model would just hide it.
+        Assert.False(viewModel.HasMechanicalInstances);
+        Assert.False(viewModel.EmphasizeMechanics);
+    }
+
+    [Fact]
+    public void TheContextOpacityDefaultsToMostlyTransparent()
+    {
+        var viewModel = new MainViewModel(new FakeRenderer(), TestPaths.RepositoryRoot);
+
+        Assert.Equal(0.2, viewModel.GhostOpacity, 3);
     }
 
     [Fact]

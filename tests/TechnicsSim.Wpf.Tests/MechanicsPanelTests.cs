@@ -109,13 +109,58 @@ public sealed class MechanicsPanelTests
     }
 
     [Fact]
-    public void SelectingARowHighlightsItsInstance()
+    public void SelectingAMeshRowHighlightsBothOfItsGears()
     {
         var panel = Load(out var highlighted);
 
         panel.SelectedRow = panel.Meshes[0];
 
-        Assert.Equal(panel.Meshes[0].Mesh.GearA, highlighted.Single());
+        // Showing only one gear would leave the reviewer hunting for the partner the row is about.
+        Assert.Equal(
+            [panel.Meshes[0].Mesh.GearA, panel.Meshes[0].Mesh.GearB],
+            highlighted.Single());
+    }
+
+    [Fact]
+    public void SelectionIsSingularAcrossTheFourSections()
+    {
+        var panel = Load(out _);
+
+        panel.SelectedRow = panel.Meshes[0];
+        Assert.True(panel.Meshes[0].IsSelected);
+
+        // The sections are separate lists sharing one selection, so selecting in one has to
+        // clear the other; nothing else is watching for that.
+        panel.SelectedRow = panel.Drivers[0];
+
+        Assert.False(panel.Meshes[0].IsSelected);
+        Assert.True(panel.Drivers[0].IsSelected);
+    }
+
+    [Fact]
+    public void ReselectingTheSameRowDoesNotRepeatTheHighlight()
+    {
+        var panel = Load(out var highlighted);
+
+        panel.SelectedRow = panel.Meshes[0];
+        panel.SelectedRow = panel.Meshes[0];
+
+        // Every highlight rebuilds the solid pass, so a repeated click must not cost one.
+        Assert.Single(highlighted);
+    }
+
+    [Fact]
+    public void LoadingAModelDropsTheSelectionWithTheRowsItPointedAt()
+    {
+        var panel = Load(out _);
+        var stale = panel.Meshes[0];
+
+        panel.SelectedRow = stale;
+        panel.Load("Models/fixture.mpd", BuildGraph(false).Graph, BuildGraph(false).Expansion,
+            ModelSidecar.Empty("fixture.mpd"), SidecarEffect.None);
+
+        Assert.Null(panel.SelectedRow);
+        Assert.False(stale.IsSelected);
     }
 
     [Fact]
@@ -145,9 +190,9 @@ public sealed class MechanicsPanelTests
     }
 
     private static MechanicsPanelViewModel Load(
-        out List<string> highlighted, bool wormWithoutPrediction = false)
+        out List<ImmutableArray<string>> highlighted, bool wormWithoutPrediction = false)
     {
-        var captured = new List<string>();
+        var captured = new List<ImmutableArray<string>>();
         highlighted = captured;
 
         var panel = new MechanicsPanelViewModel(captured.Add);

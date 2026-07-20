@@ -137,6 +137,58 @@ public sealed record ShaftGraph(
 
     public IEnumerable<GearMesh> MeshesForShaft(string shaftId) =>
         Meshes.Where(mesh => mesh.ShaftA == shaftId || mesh.ShaftB == shaftId);
+
+    /// <summary>
+    /// Every logical instance this graph accounts for: shaft members, gears, drivers, and the
+    /// components it refuses to solve but still knows about.
+    ///
+    /// Bearings are deliberately excluded. A bearing is the beam or liftarm a shaft turns inside,
+    /// so counting them would pull most of the chassis in and make "the drivetrain" mean little.
+    /// Callers that want the supporting structure should ask for the bearings separately.
+    /// </summary>
+    public ImmutableArray<string> MechanicalInstanceIds()
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var result = ImmutableArray.CreateBuilder<string>();
+
+        void Add(string instanceId)
+        {
+            if (seen.Add(instanceId))
+            {
+                result.Add(instanceId);
+            }
+        }
+
+        foreach (var shaft in Shafts)
+        {
+            foreach (var instanceId in shaft.InstanceIds)
+            {
+                Add(instanceId);
+            }
+        }
+
+        foreach (var gear in Gears)
+        {
+            Add(gear.InstanceId);
+        }
+
+        foreach (var driver in Drivers)
+        {
+            Add(driver.InstanceId);
+        }
+
+        foreach (var component in UnsupportedComponents)
+        {
+            Add(component.InstanceId);
+        }
+
+        foreach (var component in UncataloguedComponents)
+        {
+            Add(component.InstanceId);
+        }
+
+        return result.ToImmutable();
+    }
 }
 
 public sealed record ShaftGraphOptions(

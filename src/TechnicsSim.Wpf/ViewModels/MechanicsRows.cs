@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TechnicsSim.Mechanics.Catalog;
@@ -9,11 +10,28 @@ namespace TechnicsSim.Wpf.ViewModels;
 /// <summary>Shared change notification for the mechanics rows.</summary>
 public abstract class MechanicsRow : INotifyPropertyChanged
 {
-    /// <summary>The instance the 3D view should highlight when this row is selected.</summary>
-    public abstract string HighlightInstanceId { get; }
+    private bool _isSelected;
+
+    /// <summary>
+    /// The instances the 3D view should highlight when this row is selected.
+    ///
+    /// More than one because a gear mesh is a statement about a pair: highlighting one of the two
+    /// gears would leave the reviewer hunting for the partner the row is actually about.
+    /// </summary>
+    public abstract ImmutableArray<string> HighlightInstanceIds { get; }
 
     /// <summary>True once the reviewer has changed something that export would record.</summary>
     public abstract bool IsReviewed { get; }
+
+    /// <summary>
+    /// Drives the card's selected styling. Owned by <see cref="MechanicsPanelViewModel"/>, which
+    /// keeps it to one row across all four sections.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => Set(ref _isSelected, value);
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -60,7 +78,7 @@ public sealed class MeshRow : MechanicsRow
 
     public MountedGear GearB { get; }
 
-    public override string HighlightInstanceId => Mesh.GearA;
+    public override ImmutableArray<string> HighlightInstanceIds => [Mesh.GearA, Mesh.GearB];
 
     public override bool IsReviewed => _decision is not null;
 
@@ -143,7 +161,7 @@ public sealed class ClutchRow : MechanicsRow
 
     public UnsupportedComponent Component { get; }
 
-    public override string HighlightInstanceId => Component.InstanceId;
+    public override ImmutableArray<string> HighlightInstanceIds => [Component.InstanceId];
 
     public override bool IsReviewed => _state is not null;
 
@@ -205,7 +223,7 @@ public sealed class DriverRow : MechanicsRow
 
     public MountedDriver Driver { get; }
 
-    public override string HighlightInstanceId => Driver.InstanceId;
+    public override ImmutableArray<string> HighlightInstanceIds => [Driver.InstanceId];
 
     public override bool IsReviewed => _isDriver;
 
@@ -250,7 +268,7 @@ public sealed class BoundaryRow(UnsupportedComponent component, int count) : Mec
 
     public int Count { get; } = count;
 
-    public override string HighlightInstanceId => Component.InstanceId;
+    public override ImmutableArray<string> HighlightInstanceIds => [Component.InstanceId];
 
     public override bool IsReviewed => false;
 

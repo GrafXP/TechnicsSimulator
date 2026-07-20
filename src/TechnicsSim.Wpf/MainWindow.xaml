@@ -42,6 +42,14 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="6" />
             <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <!-- Matches the selection colour the renderer paints the part itself with. -->
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Background" Value="#12333C" />
+                    <Setter Property="BorderBrush" Value="#00E6FF" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="ReasonBox" TargetType="TextBox">
             <Setter Property="Background" Value="#1E1E1E" />
@@ -69,6 +77,13 @@
                 <Button Content="Zoom to selection" Click="OnZoomToSelection" />
                 <CheckBox Content="Edges" IsChecked="{Binding ShowEdges}" />
                 <CheckBox Content="Diagnostics (bounds + features + mates)" IsChecked="{Binding ShowDiagnostics}" />
+                <CheckBox Content="Isolate drivetrain" IsChecked="{Binding EmphasizeMechanics}"
+                          IsEnabled="{Binding HasMechanicalInstances}"
+                          ToolTip="Fades every part the drivetrain graph does not account for, and lets clicks pass through them." />
+                <TextBlock Text="Context" VerticalAlignment="Center" Margin="12,0,4,0" Foreground="#999999" />
+                <Slider Width="90" VerticalAlignment="Center" Minimum="0.02" Maximum="1.0"
+                        Value="{Binding GhostOpacity}" IsEnabled="{Binding EmphasizeMechanics}"
+                        ToolTip="How solid the faded context stays." />
             </StackPanel>
         </Border>
 
@@ -146,7 +161,11 @@
                             </StackPanel>
                         </Border>
 
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,0">
+                        <!-- One handler for all four sections: every element inside a row template
+                             inherits that row as its DataContext, so the click resolves the same
+                             way wherever on the card it lands. -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,0"
+                                      PreviewMouseLeftButtonDown="OnMechanicsRowClick">
                             <StackPanel>
                                 <TextBlock Text="Gear meshes" Style="{StaticResource SectionHeader}" />
                                 <ItemsControl ItemsSource="{Binding Meshes}">
@@ -273,11 +292,18 @@
                                 BackgroundColor="#FF202020"
                                 ShowCoordinateSystem="True"
                                 ShowViewCube="True"
-                                UseDefaultGestures="True"
+                                UseDefaultGestures="False"
                                 CameraRotationMode="Turntable"
+                                OITRenderMode="SinglePassWeighted"
                                 ZoomExtentsWhenLoaded="False"
                                 PreviewMouseLeftButtonDown="OnViewportPress"
                                 PreviewMouseLeftButtonUp="OnViewportRelease">
+                    <hx:Viewport3DX.InputBindings>
+                        <MouseBinding MouseAction="RightClick"
+                                      Command="{x:Static hx:ViewportCommands.Rotate}" />
+                        <MouseBinding MouseAction="MiddleClick"
+                                      Command="{x:Static hx:ViewportCommands.Pan}" />
+                    </hx:Viewport3DX.InputBindings>
                     <hx:Viewport3DX.Camera>
                         <hx:PerspectiveCamera Position="600,400,600" LookDirection="-600,-400,-600"
                                               UpDirection="0,1,0"

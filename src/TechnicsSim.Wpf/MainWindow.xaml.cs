@@ -82,8 +82,9 @@ public partial class MainWindow : Window
 
     private System.Windows.Point? _pressPoint;
 
-    // Left-drag orbits the camera and left-click selects, and both start with the same button
-    // press. Selection therefore happens on release, and only if the pointer barely moved.
+    // Left is reserved for selection; right-drag rotates and middle-drag pans through the
+    // viewport's explicit input bindings. Selection happens on release so a stray left-drag
+    // does not accidentally pick a part.
     private void OnViewportPress(object sender, MouseButtonEventArgs e) =>
         _pressPoint = e.GetPosition(Viewport);
 
@@ -102,6 +103,20 @@ public partial class MainWindow : Window
         if (moved <= dragThreshold)
         {
             _viewModel.SelectAt(release);
+        }
+    }
+
+    /// <summary>
+    /// Selects the mechanics row that was clicked.
+    ///
+    /// This tunnels rather than bubbles, so the row is selected before a radio button or reason
+    /// box inside it takes the click. The event is left unhandled so those controls still work.
+    /// </summary>
+    private void OnMechanicsRowClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is FrameworkElement { DataContext: MechanicsRow row })
+        {
+            _viewModel.Mechanics.SelectedRow = row;
         }
     }
 

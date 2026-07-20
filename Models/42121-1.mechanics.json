@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "model": "42121-1.mpd",
+  "groundInstanceIds": [],
+  "mates": [],
+  "shafts": [],
+  "meshes": [
+    {
+      "gearA": "42121 - main.ldr@8|42121 - excavator.ldr@719|42121 - arm.ldr@85",
+      "gearB": "42121 - main.ldr@8|42121 - excavator.ldr@719|42121 - arm.ldr@89",
+      "decision": "Accept",
+      "reason": "Reviewed in the viewer as engaging."
+    }
+  ],
+  "clutches": [],
+  "drivers": [],
+  "unsupported": [],
+  "instanceFingerprints": {
+    "42121 - main.ldr@8|42121 - excavator.ldr@719|42121 - arm.ldr@89": "32198.dat@17.0,-130.0,-9.0",
+    "42121 - main.ldr@8|42121 - excavator.ldr@719|42121 - arm.ldr@85": "6589.dat@0.0,-155.8,-17.0"
+  },
+  "isEmpty": false
+}

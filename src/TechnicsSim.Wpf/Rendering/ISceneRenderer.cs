@@ -34,14 +34,37 @@ public interface ISceneRenderer
     /// </summary>
     string? PickInstance(Point viewportPoint);
 
-    /// <summary>Highlights an instance, or clears the highlight when passed null.</summary>
-    void Highlight(string? instanceId);
+    /// <summary>
+    /// Highlights a set of instances, or clears the highlight when passed an empty set.
+    ///
+    /// This takes a set rather than one ID because the mechanics panel's central row is a gear
+    /// <i>mesh</i>: showing one of the two gears leaves the reviewer guessing which partner the
+    /// row is about.
+    /// </summary>
+    void Highlight(IReadOnlyCollection<string> instanceIds);
+
+    /// <summary>
+    /// Records which instances the drivetrain graph accounts for, so
+    /// <see cref="EmphasizeMechanics"/> knows what to keep solid.
+    /// </summary>
+    void SetMechanicalInstances(IEnumerable<string> instanceIds);
+
+    /// <summary>
+    /// Fades every instance that is not part of the drivetrain down to <see cref="GhostOpacity"/>.
+    ///
+    /// Without this a gear is a few hundred triangles buried inside several thousand parts of
+    /// bodywork, and no amount of outlining makes it findable.
+    /// </summary>
+    bool EmphasizeMechanics { get; set; }
+
+    /// <summary>Opacity kept by faded context geometry, from nearly invisible to fully solid.</summary>
+    double GhostOpacity { get; set; }
 
     /// <summary>Frames the camera on the whole model.</summary>
     void ZoomToFit();
 
-    /// <summary>Frames the camera on one instance.</summary>
-    void ZoomToInstance(string instanceId);
+    /// <summary>Frames the camera on the combined bounds of the supplied instances.</summary>
+    void ZoomToInstances(IReadOnlyCollection<string> instanceIds);
 
     /// <summary>Draws type-2 edge lines as an additional pass.</summary>
     bool ShowEdges { get; set; }

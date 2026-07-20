@@ -19,7 +19,7 @@ namespace TechnicsSim.Wpf.ViewModels;
 /// </summary>
 public sealed class MechanicsPanelViewModel : INotifyPropertyChanged
 {
-    private readonly Action<string> _highlight;
+    private readonly Action<ImmutableArray<string>> _highlight;
 
     private ShaftGraph? _graph;
     private ModelExpansion? _expansion;
@@ -28,7 +28,7 @@ public sealed class MechanicsPanelViewModel : INotifyPropertyChanged
     private MechanicsRow? _selectedRow;
     private string _exportStatus = string.Empty;
 
-    public MechanicsPanelViewModel(Action<string> highlight)
+    public MechanicsPanelViewModel(Action<ImmutableArray<string>> highlight)
     {
         _highlight = highlight;
         ExportCommand = new RelayCommand(Export, () => _modelPath is not null);
@@ -65,15 +65,41 @@ public sealed class MechanicsPanelViewModel : INotifyPropertyChanged
         private set => Set(ref _exportStatus, value);
     }
 
-    /// <summary>Selecting a row drives the 3D highlight, matching the model tree's behaviour.</summary>
+    /// <summary>
+    /// Selecting a row drives the 3D highlight, matching the model tree's behaviour.
+    ///
+    /// The four sections are separate lists but share one selection, so the selected flag is
+    /// maintained here rather than by any list control. That also avoids the alternative --
+    /// four <c>ListBox</c>es bound to one property -- where each list that does not contain the
+    /// new row reports its own selection as null and wipes the one just made.
+    /// </summary>
     public MechanicsRow? SelectedRow
     {
         get => _selectedRow;
         set
         {
-            if (Set(ref _selectedRow, value) && value is not null)
+            if (ReferenceEquals(_selectedRow, value))
             {
-                _highlight(value.HighlightInstanceId);
+                return;
+            }
+
+            if (_selectedRow is not null)
+            {
+                _selectedRow.IsSelected = false;
+            }
+
+            _selectedRow = value;
+
+            if (_selectedRow is not null)
+            {
+                _selectedRow.IsSelected = true;
+            }
+
+            OnPropertyChanged();
+
+            if (value is not null)
+            {
+                _highlight(value.HighlightInstanceIds);
             }
         }
     }
@@ -90,6 +116,9 @@ public sealed class MechanicsPanelViewModel : INotifyPropertyChanged
         _graph = graph;
         _expansion = expansion;
         _sidecar = sidecar;
+
+        // The rows about to be discarded are the ones the selection points at.
+        SelectedRow = null;
 
         Meshes.Clear();
         Clutches.Clear();

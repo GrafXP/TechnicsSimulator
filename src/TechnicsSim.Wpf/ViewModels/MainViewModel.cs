@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -32,10 +33,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private ColourPalette _palette = ColourPalette.Fallback;
     private RenderScene? _scene;
     private ConnectionAnalysis? _mechanics;
+    private ImmutableArray<string> _mechanicalInstances = [];
 
     private string _status = "Ready.";
     private string _statistics = string.Empty;
     private string? _selectedInstanceId;
+    private ImmutableArray<string> _selectedInstanceIds = [];
     private ModelTreeNode? _selectedNode;
     private bool _isBusy;
 
@@ -143,7 +146,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (value?.InstanceId is { } id)
             {
                 SelectedInstanceId = id;
-                _renderer.Highlight(id);
+                _selectedInstanceIds = [id];
+                _renderer.Highlight([id]);
             }
         }
     }
@@ -167,6 +171,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    /// <summary>Fades everything the drivetrain graph does not account for.</summary>
+    public bool EmphasizeMechanics
+    {
+        get => _renderer.EmphasizeMechanics;
+        set
+        {
+            _renderer.EmphasizeMechanics = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>How solid the faded context stays. 0.2 is the "80% transparent" default.</summary>
+    public double GhostOpacity
+    {
+        get => _renderer.GhostOpacity;
+        set
+        {
+            _renderer.GhostOpacity = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>False when no drivetrain was reconstructed, so there is nothing to isolate.</summary>
+    public bool HasMechanicalInstances => _mechanicalInstances.Length > 0;
 
     /// <summary>Locates the library and lists the models shipped with the repository.</summary>
     public void Initialize()
@@ -218,6 +247,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Status = $"Loading {Path.GetFileName(path)}...";
         Tree.Clear();
         SelectedInstanceId = null;
+        _selectedInstanceIds = [];
+        _mechanicalInstances = [];
+        OnPropertyChanged(nameof(HasMechanicalInstances));
 
         try
         {
@@ -259,7 +291,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (graph is not null)
             {
                 Mechanics.Load(path, graph, model.Expansion, sidecar, effect);
+                _mechanicalInstances = graph.MechanicalInstanceIds();
             }
+
+            _renderer.SetMechanicalInstances(_mechanicalInstances);
+            OnPropertyChanged(nameof(HasMechanicalInstances));
 
             Statistics =
                 $"{stats.Instances:N0} instances   {stats.InstancedModels:N0} batches   "
@@ -268,7 +304,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 + (mechanics is null
                     ? "   no shadow diagnostics"
                     : $"   {mechanics.Features.Length:N0} features / {mechanics.Connections.Length:N0} mates / "
-                      + $"{mechanics.Ambiguities.Length:N0} ambiguous");
+                      + $"{mechanics.Ambiguities.Length:N0} ambiguous")
+                + (_mechanicalInstances.Length == 0
+                    ? string.Empty
+                    : $"   {_mechanicalInstances.Length:N0} drivetrain parts");
 
             var unresolved = model.Expansion.Unresolved.Length;
             Status = unresolved == 0
@@ -301,12 +340,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Highlights an instance chosen in the mechanics panel, and mirrors it in the tree.</summary>
-    private void HighlightFromPanel(string instanceId)
+    /// <summary>Highlights the instances chosen in the mechanics panel, and mirrors them in the tree.</summary>
+    private void HighlightFromPanel(ImmutableArray<string> instanceIds)
     {
-        SelectedInstanceId = instanceId;
-        _renderer.Highlight(instanceId);
-        SelectTreeNode(instanceId);
+        if (instanceIds.IsEmpty)
+        {
+            return;
+        }
+
+        // Finding a 24-tooth gear by eye inside a 3,000-part model is hopeless, so choosing a row
+        // turns the isolation on rather than leaving the reviewer to discover the checkbox.
+        if (HasMechanicalInstances)
+        {
+            EmphasizeMechanics = true;
+        }
+
+        SelectedInstanceId = instanceIds[0];
+        _selectedInstanceIds = instanceIds;
+        _renderer.Highlight(instanceIds);
+        SelectTreeNode(instanceIds[0]);
+        _renderer.ZoomToInstances(instanceIds);
     }
 
     /// <summary>Handles a viewport click, resolving it to a logical instance.</summary>
@@ -315,7 +368,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var instanceId = _renderer.PickInstance(viewportPoint);
 
         SelectedInstanceId = instanceId;
-        _renderer.Highlight(instanceId);
+        _selectedInstanceIds = instanceId is null ? [] : [instanceId];
+        _renderer.Highlight(_selectedInstanceIds);
 
         if (instanceId is not null)
         {
@@ -365,9 +419,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public void ZoomToSelection()
     {
-        if (_selectedInstanceId is { } id)
+        if (!_selectedInstanceIds.IsEmpty)
         {
-            _renderer.ZoomToInstance(id);
+            _renderer.ZoomToInstances(_selectedInstanceIds);
         }
     }
 

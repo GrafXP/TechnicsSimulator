@@ -184,4 +184,42 @@ public sealed class ShaftGraphTests
             first.Shafts.Select(shaft => $"{shaft.ShaftId}|{string.Join(",", shaft.InstanceIds)}"),
             second.Shafts.Select(shaft => $"{shaft.ShaftId}|{string.Join(",", shaft.InstanceIds)}"));
     }
+
+    [ShadowFact]
+    public void TheMechanicalInstanceSetCoversTheDrivetrainWithoutItsSupports()
+    {
+        var graph = Build("8275-1.mpd");
+        var mechanical = graph.MechanicalInstanceIds();
+
+        Assert.Equal(mechanical.Length, mechanical.Distinct(StringComparer.Ordinal).Count());
+
+        // Everything the graph reasons about is in, including the parts it refuses to solve --
+        // a clutch that vanished from the isolated view would read as "not detected".
+        Assert.All(graph.Gears, gear => Assert.Contains(gear.InstanceId, mechanical));
+        Assert.All(graph.Drivers, driver => Assert.Contains(driver.InstanceId, mechanical));
+        Assert.All(
+            graph.UnsupportedComponents,
+            component => Assert.Contains(component.InstanceId, mechanical));
+
+        // Supporting a shaft is not by itself qualifying. Plenty of bearings are in the set
+        // anyway because they earn it another way -- most by riding a shaft of their own, and
+        // 8275's 6542a clutch gears by being boundaries in their own right -- so the claim worth
+        // pinning is that the bearings-only remainder is real and stays out. Folding it in would
+        // drag the beams and liftarms around every axle back to full opacity, which is most of
+        // the chassis and the end of any useful isolation.
+        var bearings = graph.Shafts
+            .SelectMany(shaft => shaft.BearingInstanceIds)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var bearingsOnly = bearings.Count(id => !mechanical.Contains(id));
+
+        Assert.True(
+            bearingsOnly > 50,
+            $"only {bearingsOnly} of {bearings.Count} bearings are excluded from the mechanical "
+            + "set, so bearings are no longer being kept out of it.");
+
+        // And the point of the exercise: a reviewable subset, not most of a 3,029-part model.
+        Assert.InRange(mechanical.Length, 1, 1500);
+    }
 }

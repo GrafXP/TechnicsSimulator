@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using HelixToolkit;
 using HelixToolkit.Maths;
 using HelixToolkit.SharpDX;
@@ -28,6 +29,9 @@ namespace TechnicsSim.Wpf.Rendering;
 /// </summary>
 public sealed class HelixSceneRenderer : ISceneRenderer
 {
+    /// <summary>Colour of the selected instance's solid overlay and its bounding box.</summary>
+    private static readonly MediaColor SelectionColour = MediaColor.FromRgb(0, 230, 255);
+
     private readonly Viewport3DX _viewport;
     private readonly GroupModel3D _sceneRoot = new();
     private readonly GroupModel3D _edgeRoot = new();
@@ -35,10 +39,19 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     private readonly GroupModel3D _highlightRoot = new();
     private readonly InstanceIdentityMap _identities = new();
 
+    // One GPU buffer per (part, mesh group), reused by every colour variant of that part and
+    // kept across rebuilds so toggling emphasis re-uploads instance transforms, not geometry.
+    private readonly Dictionary<(string Part, int Group), HelixMesh> _buffers = [];
+    private readonly HashSet<string> _mechanical = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _highlighted = new(StringComparer.Ordinal);
+    private readonly List<(PhongMaterial Material, ResolvedColour Colour)> _ghostMaterials = [];
+
     private RenderScene? _scene;
     private ConnectionAnalysis? _mechanics;
     private bool _showEdges;
     private bool _showDiagnostics;
+    private bool _emphasizeMechanics;
+    private double _ghostOpacity = 0.2;
 
     public HelixSceneRenderer(Viewport3DX viewport)
     {
@@ -76,33 +89,64 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         }
     }
 
+    public bool EmphasizeMechanics
+    {
+        get => _emphasizeMechanics;
+        set
+        {
+            if (_emphasizeMechanics == value)
+            {
+                return;
+            }
+
+            _emphasizeMechanics = value;
+            RebuildInstanceModels();
+        }
+    }
+
+    public double GhostOpacity
+    {
+        get => _ghostOpacity;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.02, 1.0);
+            if (Math.Abs(_ghostOpacity - clamped) < 0.001)
+            {
+                return;
+            }
+
+            _ghostOpacity = clamped;
+            if (_emphasizeMechanics)
+            {
+                // Opacity is a material property. Rebuilding hundreds of scene elements for
+                // every pixel the slider moves over made the control unnecessarily expensive.
+                foreach (var (material, colour) in _ghostMaterials)
+                {
+                    material.DiffuseColor = GhostDiffuse(colour);
+                }
+
+                RequestRedraw();
+            }
+        }
+    }
+
     public RenderStatistics Load(RenderScene scene)
     {
         var watch = Stopwatch.StartNew();
         Clear();
         _scene = scene;
 
-        // One GPU buffer per (part, mesh group), reused by every colour variant of that part.
-        var buffers = new Dictionary<(string Part, int Group), HelixMesh>();
-
         foreach (var batch in scene.Batches)
         {
             var group = scene.Meshes[batch.CanonicalPartName].Groups[batch.MeshGroupIndex];
-            if (group.TriangleCount == 0)
-            {
-                continue;
-            }
-
             var key = (batch.CanonicalPartName, batch.MeshGroupIndex);
-            if (!buffers.TryGetValue(key, out var geometry))
+            if (group.TriangleCount > 0 && !_buffers.ContainsKey(key))
             {
-                buffers[key] = geometry = ToHelixMesh(group);
+                _buffers[key] = ToHelixMesh(group);
             }
-
-            _sceneRoot.Children.Add(CreateInstancedModel(scene, batch, geometry));
         }
 
-        AddStaticGeometry(scene);
+        RebuildInstanceModels();
 
         if (ShowEdges)
         {
@@ -119,11 +163,122 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         return new RenderStatistics(
             scene.Instances.Length,
             _sceneRoot.Children.Count,
-            buffers.Count,
+            _buffers.Count,
             scene.UploadedTriangleCount,
             scene.TriangleCount,
             watch.ElapsedMilliseconds);
     }
+
+    public void SetMechanicalInstances(IEnumerable<string> instanceIds)
+    {
+        _mechanical.Clear();
+        foreach (var id in instanceIds)
+        {
+            _mechanical.Add(id);
+        }
+
+        if (_emphasizeMechanics)
+        {
+            RebuildInstanceModels();
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the solid pass, splitting every batch into the instances drawn normally and the
+    /// instances drawn faded.
+    ///
+    /// The split has to happen at batch level because one instanced model carries one material,
+    /// so "fade everything except the drivetrain" is not a material setting but a different draw.
+    /// The geometry buffers are shared across the split and across rebuilds, so the cost is
+    /// re-uploading instance transforms -- a few hundred kilobytes for the largest model.
+    ///
+    /// Highlighted instances are left out of this pass entirely and drawn by
+    /// <see cref="RebuildHighlight"/> instead. Drawing a bright copy on top of the original would
+    /// put two coincident surfaces in the depth buffer and flicker.
+    /// </summary>
+    private void RebuildInstanceModels()
+    {
+        RemoveAll(_sceneRoot);
+        _identities.Clear();
+        _ghostMaterials.Clear();
+
+        if (_scene is null)
+        {
+            return;
+        }
+
+        var solid = new List<int>();
+        var ghost = new List<int>();
+
+        foreach (var batch in _scene.Batches)
+        {
+            if (!_buffers.TryGetValue((batch.CanonicalPartName, batch.MeshGroupIndex), out var geometry))
+            {
+                continue;
+            }
+
+            solid.Clear();
+            ghost.Clear();
+
+            foreach (var index in batch.InstanceIndices)
+            {
+                var id = _scene.Instances[index].InstanceId;
+                if (_highlighted.Contains(id))
+                {
+                    continue;
+                }
+
+                (IsFaded(id) ? ghost : solid).Add(index);
+            }
+
+            if (solid.Count > 0)
+            {
+                _sceneRoot.Children.Add(CreateInstancedModel(_scene, batch, geometry, solid, faded: false));
+            }
+
+            if (ghost.Count > 0)
+            {
+                _sceneRoot.Children.Add(CreateInstancedModel(_scene, batch, geometry, ghost, faded: true));
+            }
+        }
+
+        AddStaticGeometry(_scene);
+        RebuildHighlight();
+        RequestRedraw();
+    }
+
+    /// <summary>
+    /// Forces the viewport to redraw after its child models were replaced.
+    ///
+    /// The renderer iterates a flattened per-frame list rather than the scene graph directly.
+    /// <c>InvalidatePerFrameRenderables</c> rebuilds that list after scene elements change and
+    /// also wakes Helix's on-demand render loop.
+    /// </summary>
+    private void RequestRedraw() => _viewport.RenderHost?.InvalidatePerFrameRenderables();
+
+    /// <summary>
+    /// Empties a group one child at a time.
+    ///
+    /// <c>Children.Clear()</c> raises a single <c>Reset</c> that carries no <c>OldItems</c>, and
+    /// the group cannot detach scene nodes it was never handed, so the replacements never reach
+    /// the screen. Individual removals carry the item being removed and detach correctly.
+    ///
+    /// This is a separate defect from the missing render invalidation in
+    /// <see cref="RebuildInstanceModels"/>, and both have to be fixed: swapping this back to
+    /// <c>Clear()</c> reproduces a stale viewport even with the invalidation in place. That was
+    /// checked, not assumed.
+    /// </summary>
+    private static void RemoveAll(GroupModel3D group)
+    {
+        for (var index = group.Children.Count - 1; index >= 0; index--)
+        {
+            group.Children.RemoveAt(index);
+        }
+    }
+
+    /// <summary>The drivetrain is never faded; everything else is, once emphasis is on.</summary>
+    private bool IsFaded(string instanceId) =>
+        _emphasizeMechanics && !_mechanical.Contains(instanceId);
 
     public void SetMechanicsDiagnostics(ConnectionAnalysis? analysis)
     {
@@ -135,12 +290,12 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     }
 
     private InstancingMeshGeometryModel3D CreateInstancedModel(
-        RenderScene scene, InstanceBatch batch, HelixMesh geometry)
+        RenderScene scene, InstanceBatch batch, HelixMesh geometry, List<int> indices, bool faded)
     {
-        var transforms = new List<Matrix4x4>(batch.InstanceCount);
-        var instanceIds = ImmutableArray.CreateBuilder<string>(batch.InstanceCount);
+        var transforms = new List<Matrix4x4>(indices.Count);
+        var instanceIds = ImmutableArray.CreateBuilder<string>(indices.Count);
 
-        foreach (var index in batch.InstanceIndices)
+        foreach (var index in indices)
         {
             var instance = scene.Instances[index];
             transforms.Add(LDrawAxes.TransformToRenderer(instance.Transform));
@@ -151,11 +306,15 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         {
             Geometry = geometry,
             Instances = transforms,
-            Material = CreateMaterial(batch.Colour),
+            Material = faded ? CreateGhostMaterial(batch.Colour) : CreateMaterial(batch.Colour),
             CullMode = batch.DoubleSided
                 ? SharpDX.Direct3D11.CullMode.None
                 : SharpDX.Direct3D11.CullMode.Back,
-            IsTransparent = batch.Colour.IsTranslucent,
+            IsTransparent = faded || batch.Colour.IsTranslucent,
+
+            // Faded geometry is context, not a target: a click passes through the bodywork to the
+            // drivetrain part behind it, which is the whole point of turning emphasis on.
+            IsHitTestVisible = !faded,
         };
 
         // A hit reports the instance index within this model, so identity is recorded per model
@@ -168,6 +327,9 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     /// Adds the generated hose and spring fallback meshes. These are decorative and are drawn
     /// without instance identifiers, so a click passes through them rather than selecting
     /// something that is not a logical part.
+    ///
+    /// They are never logical parts, so they are never part of the drivetrain and fade with the
+    /// rest of the context.
     /// </summary>
     private void AddStaticGeometry(RenderScene scene)
     {
@@ -178,13 +340,15 @@ public sealed class HelixSceneRenderer : ISceneRenderer
                 continue;
             }
 
+            var colour = ResolveStaticColour(group.ColourCode);
             _sceneRoot.Children.Add(new MeshGeometryModel3D
             {
                 Geometry = ToHelixMesh(group),
-                Material = CreateMaterial(ResolveStaticColour(group.ColourCode)),
+                Material = _emphasizeMechanics ? CreateGhostMaterial(colour) : CreateMaterial(colour),
                 CullMode = group.DoubleSided
                     ? SharpDX.Direct3D11.CullMode.None
                     : SharpDX.Direct3D11.CullMode.Back,
+                IsTransparent = _emphasizeMechanics || colour.IsTranslucent,
                 IsHitTestVisible = false,
             });
         }
@@ -231,7 +395,7 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     /// </summary>
     private void BuildDiagnostics(RenderScene scene)
     {
-        _diagnosticsRoot.Children.Clear();
+        RemoveAll(_diagnosticsRoot);
 
         var size = scene.Bounds.IsEmpty ? 100f : scene.Bounds.Size.Length() * 0.25f;
         _diagnosticsRoot.Children.Add(BuildAxis(Vector3.UnitX * size, Colors.Red));
@@ -440,31 +604,99 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         return null;
     }
 
-    public void Highlight(string? instanceId)
+    public void Highlight(IReadOnlyCollection<string> instanceIds)
     {
-        _highlightRoot.Children.Clear();
-
-        if (instanceId is null || _scene is null)
+        if (_highlighted.Count == instanceIds.Count && instanceIds.All(_highlighted.Contains))
         {
             return;
         }
 
-        var instance = _scene.FindInstance(instanceId);
-        if (instance is null || instance.WorldBounds.IsEmpty)
+        _highlighted.Clear();
+        foreach (var id in instanceIds)
+        {
+            _highlighted.Add(id);
+        }
+
+        // The solid pass decides which instances it skips, so a changed selection means it has
+        // to be rebuilt rather than merely overlaid.
+        RebuildInstanceModels();
+    }
+
+    /// <summary>
+    /// Draws the selected instances as a solid bright copy of their own geometry, plus a
+    /// bounding box.
+    ///
+    /// The box alone was the previous highlight and is not enough: on a model the size of 42100
+    /// a 24-tooth gear's outline is a few pixels of thin line among thousands of parts. Repainting
+    /// the part itself is what makes it findable; the box stays because it is still what locates
+    /// a part that is currently hidden behind something else.
+    /// </summary>
+    private void RebuildHighlight()
+    {
+        RemoveAll(_highlightRoot);
+
+        if (_scene is null || _highlighted.Count == 0)
         {
             return;
         }
 
-        var builder = new LineBuilder();
-        AddBox(builder, instance.WorldBounds);
+        var boxes = new LineBuilder();
+        var boxed = false;
 
-        _highlightRoot.Children.Add(new LineGeometryModel3D
+        foreach (var id in _highlighted)
         {
-            Geometry = builder.ToLineGeometry3D(),
-            Color = Colors.Cyan,
-            Thickness = 2,
-            IsHitTestVisible = false,
-        });
+            var instance = _scene.FindInstance(id);
+            if (instance is null)
+            {
+                continue;
+            }
+
+            if (!instance.WorldBounds.IsEmpty)
+            {
+                AddBox(boxes, instance.WorldBounds);
+                boxed = true;
+            }
+
+            if (!_scene.Meshes.TryGetValue(instance.CanonicalPartName, out var mesh))
+            {
+                continue;
+            }
+
+            var transform = LDrawAxes.TransformToRenderer(instance.Transform);
+            for (var group = 0; group < mesh.Groups.Length; group++)
+            {
+                if (!_buffers.TryGetValue((instance.CanonicalPartName, group), out var geometry))
+                {
+                    continue;
+                }
+
+                var model = new InstancingMeshGeometryModel3D
+                {
+                    Geometry = geometry,
+                    Instances = [transform],
+                    Material = HighlightMaterial,
+                    CullMode = mesh.Groups[group].DoubleSided
+                        ? SharpDX.Direct3D11.CullMode.None
+                        : SharpDX.Direct3D11.CullMode.Back,
+                };
+
+                // Registered so that clicking an already-highlighted part re-selects it instead
+                // of picking whatever this overlay is standing in front of.
+                _identities.Register(model, [id]);
+                _highlightRoot.Children.Add(model);
+            }
+        }
+
+        if (boxed)
+        {
+            _highlightRoot.Children.Add(new LineGeometryModel3D
+            {
+                Geometry = boxes.ToLineGeometry3D(),
+                Color = SelectionColour,
+                Thickness = 2,
+                IsHitTestVisible = false,
+            });
+        }
     }
 
     public void ZoomToFit()
@@ -477,45 +709,58 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         FrameBounds(_scene.Bounds);
     }
 
-    public void ZoomToInstance(string instanceId)
+    public void ZoomToInstances(IReadOnlyCollection<string> instanceIds)
     {
-        var instance = _scene?.FindInstance(instanceId);
-        if (instance is not null && !instance.WorldBounds.IsEmpty)
+        if (_scene is null)
         {
-            FrameBounds(instance.WorldBounds);
+            return;
+        }
+
+        var bounds = Bounds.Empty;
+        foreach (var instanceId in instanceIds)
+        {
+            var instance = _scene.FindInstance(instanceId);
+            if (instance is not null)
+            {
+                bounds = bounds.Union(instance.WorldBounds);
+            }
+        }
+
+        if (!bounds.IsEmpty)
+        {
+            FrameBounds(bounds);
         }
     }
 
     private void FrameBounds(Bounds bounds)
     {
-        var centre = ToVector3(LDrawAxes.PointToRenderer(bounds.Centre));
-        var radius = Math.Max(bounds.Size.Length() * 0.5f, 1f);
+        var transformed = bounds.Corners()
+            .Select(LDrawAxes.PointToRenderer)
+            .ToArray();
+        var min = transformed.Aggregate(Vector3.Min);
+        var max = transformed.Aggregate(Vector3.Max);
 
-        if (_viewport.Camera is not PerspectiveCamera camera)
-        {
-            return;
-        }
-
-        // Pull back along a fixed three-quarter view so framing is repeatable.
-        var direction = Vector3.Normalize(new Vector3(-1f, -0.6f, -1f));
-        var distance = radius * 2.6f;
-        var position = centre - (direction * distance);
-
-        camera.Position = new System.Windows.Media.Media3D.Point3D(position.X, position.Y, position.Z);
-        camera.LookDirection = new System.Windows.Media.Media3D.Vector3D(
-            direction.X * distance, direction.Y * distance, direction.Z * distance);
-        camera.UpDirection = new System.Windows.Media.Media3D.Vector3D(0, 1, 0);
-        camera.FarPlaneDistance = distance * 10;
-        camera.NearPlaneDistance = Math.Max(distance / 1000, 0.1);
+        // Helix accounts for field of view and the viewport's actual aspect ratio here. The old
+        // guessed distance was unreliable for long, narrow gear/shaft combinations.
+        var rect = new Rect3D(
+            min.X, min.Y, min.Z,
+            Math.Max(max.X - min.X, 1f),
+            Math.Max(max.Y - min.Y, 1f),
+            Math.Max(max.Z - min.Z, 1f));
+        _viewport.ZoomExtents(rect, 200);
     }
 
     public void Clear()
     {
-        _sceneRoot.Children.Clear();
-        _edgeRoot.Children.Clear();
-        _diagnosticsRoot.Children.Clear();
-        _highlightRoot.Children.Clear();
+        RemoveAll(_sceneRoot);
+        RemoveAll(_edgeRoot);
+        RemoveAll(_diagnosticsRoot);
+        RemoveAll(_highlightRoot);
         _identities.Clear();
+        _buffers.Clear();
+        _mechanical.Clear();
+        _highlighted.Clear();
+        _ghostMaterials.Clear();
         _scene = null;
         _mechanics = null;
     }
@@ -551,8 +796,58 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         AmbientColor = ToColor4(Scale(colour.Value, 0.35f)),
     };
 
+    /// <summary>
+    /// The material for faded context geometry.
+    ///
+    /// It desaturates as well as fading. Alpha alone leaves a red panel reading as pink and still
+    /// dominating the frame, which defeats the purpose; pulling colour towards neutral grey makes
+    /// the remaining solid parts the only saturated things on screen.
+    /// </summary>
+    private PhongMaterial CreateGhostMaterial(ResolvedColour colour)
+    {
+        var faded = Desaturate(colour.Value, 0.75f);
+        var material = new PhongMaterial
+        {
+            DiffuseColor = GhostDiffuse(colour),
+            SpecularColor = new Color4(0.02f, 0.02f, 0.02f, 1f),
+            SpecularShininess = 1f,
+            AmbientColor = ToColor4(Scale(faded, 0.25f)),
+        };
+
+        _ghostMaterials.Add((material, colour));
+        return material;
+    }
+
+    private Color4 GhostDiffuse(ResolvedColour colour)
+    {
+        var faded = Desaturate(colour.Value, 0.75f);
+        var alpha = (float)_ghostOpacity * (colour.Value.A / 255f);
+        return new Color4(faded.R / 255f, faded.G / 255f, faded.B / 255f, alpha);
+    }
+
+    /// <summary>Self-lit so the selection reads the same from every angle, including unlit faces.</summary>
+    private static PhongMaterial HighlightMaterial => new()
+    {
+        DiffuseColor = new Color4(0.10f, 0.62f, 0.72f, 1f),
+        EmissiveColor = new Color4(0.00f, 0.45f, 0.55f, 1f),
+        SpecularColor = new Color4(0.60f, 0.90f, 1.00f, 1f),
+        SpecularShininess = 40f,
+        AmbientColor = new Color4(0.05f, 0.25f, 0.30f, 1f),
+    };
+
     private static Colour Scale(Colour colour, float factor) => new(
         (byte)(colour.R * factor), (byte)(colour.G * factor), (byte)(colour.B * factor), colour.A);
+
+    /// <summary>Pulls a colour towards its own luminance, so it greys out without changing brightness.</summary>
+    private static Colour Desaturate(Colour colour, float amount)
+    {
+        var grey = (colour.R * 0.30f) + (colour.G * 0.59f) + (colour.B * 0.11f);
+        return new Colour(
+            (byte)(colour.R + ((grey - colour.R) * amount)),
+            (byte)(colour.G + ((grey - colour.G) * amount)),
+            (byte)(colour.B + ((grey - colour.B) * amount)),
+            colour.A);
+    }
 
     private static Color4 ToColor4(Colour colour) =>
         new(colour.R / 255f, colour.G / 255f, colour.B / 255f, colour.A / 255f);

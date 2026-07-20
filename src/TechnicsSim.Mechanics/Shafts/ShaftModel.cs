@@ -54,6 +54,19 @@ public sealed record UncataloguedComponent(
     string Description,
     int InstanceCount);
 
+/// <summary>
+/// A powered input and the shaft it turns.
+///
+/// Motors are neither gears nor boundaries, so without their own list they would vanish from
+/// the graph entirely. The solver needs them as the entry points a user chooses between, and
+/// 8275 has four, so more than one driver has to be representable from the start.
+/// </summary>
+public sealed record MountedDriver(
+    string InstanceId,
+    string CanonicalPartName,
+    string? ShaftId,
+    string Label);
+
 public enum GearMeshKind
 {
     /// <summary>Parallel axes, external teeth. Reverses direction.</summary>
@@ -113,7 +126,8 @@ public sealed record ShaftGraph(
     ImmutableArray<GearMesh> Meshes,
     ImmutableArray<AmbiguousMesh> AmbiguousMeshes,
     ImmutableArray<UnsupportedComponent> UnsupportedComponents,
-    ImmutableArray<UncataloguedComponent> UncataloguedComponents)
+    ImmutableArray<UncataloguedComponent> UncataloguedComponents,
+    ImmutableArray<MountedDriver> Drivers)
 {
     public ShaftAssembly? FindShaft(string shaftId) =>
         Shafts.FirstOrDefault(shaft => shaft.ShaftId == shaftId);

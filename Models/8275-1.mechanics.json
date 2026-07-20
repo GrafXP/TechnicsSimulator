@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "model": "8275-1.mpd",
+  "groundInstanceIds": [],
+  "mates": [],
+  "shafts": [],
+  "meshes": [],
+  "clutches": [
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@68|8275 - m-1j.ldr@699",
+      "state": "Locked",
+      "reason": "Kinematic MVP modelling choice, not a claim about the real mechanism: no load is modelled, so the clutch never reaches its slip threshold and behaves as a rigid coupling. Set to Free to model a deliberately disengaged path, or revisit once torque exists."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1762|8275 - m-1nm.ldr@2230",
+      "state": "Locked",
+      "reason": "Kinematic MVP modelling choice, not a claim about the real mechanism: no load is modelled, so the clutch never reaches its slip threshold and behaves as a rigid coupling. Set to Free to model a deliberately disengaged path, or revisit once torque exists."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@542|8275 - m-1ig.ldr@672",
+      "state": "Locked",
+      "reason": "Kinematic MVP modelling choice, not a claim about the real mechanism: no load is modelled, so the clutch never reaches its slip threshold and behaves as a rigid coupling. Set to Free to model a deliberately disengaged path, or revisit once torque exists."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@94|8275 - m-1q.ldr@3412",
+      "state": "Locked",
+      "reason": "Kinematic MVP modelling choice, not a claim about the real mechanism: no load is modelled, so the clutch never reaches its slip threshold and behaves as a rigid coupling. Set to Free to model a deliberately disengaged path, or revisit once torque exists."
+    }
+  ],
+  "drivers": [
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@68|8275 - m-1j.ldr@701|8275 - m-1jb.ldr@737",
+      "label": "PF XL Motor at -50.0,-40.0,120.0",
+      "reason": "Powered input. Position disambiguates the two XL motors; the mechanical role in the drivetrain has not been hand-traced yet, so the label states position rather than claiming a function."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1762|8275 - m-1nm.ldr@2232|8275 - m-1nmb.ldr@2266",
+      "label": "PF XL Motor at 50.0,-40.0,440.0",
+      "reason": "Powered input. Position disambiguates the two XL motors; the mechanical role in the drivetrain has not been hand-traced yet, so the label states position rather than claiming a function."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@151|8275 - m-1n'.ldr@4691",
+      "label": "PF Medium Motor at -40.0,-120.0,370.0",
+      "reason": "Powered input. Position disambiguates the two Medium motors; the mechanical role in the drivetrain has not been hand-traced yet, so the label states position rather than claiming a function."
+    },
+    {
+      "instanceId": "8275 - main.ldr@16|8275 - m-1.ldr@150|8275 - m-1m'.ldr@4202",
+      "label": "PF Medium Motor at 40.0,-120.0,370.0",
+      "reason": "Powered input. Position disambiguates the two Medium motors; the mechanical role in the drivetrain has not been hand-traced yet, so the label states position rather than claiming a function."
+    }
+  ],
+  "unsupported": [],
+  "instanceFingerprints": {
+    "8275 - main.ldr@16|8275 - m-1.ldr@57": "4019.dat@-60.0,-40.0,40.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1738|8275 - m-1nd.ldr@1860": "32270.dat@-20.0,-40.0,520.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1736|8275 - m-1nc.ldr@1843": "32269.dat@-20.0,0.0,520.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@258|8275 - m-1s''.ldr@7116|8275 - m-1s''a.ldr@7176": "3712.dat@0.0,-139.3,623.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@108|8275 - m-1u.ldr@3580|8275 - m-1ud.ldr@3690": "32269.dat@0.0,-80.0,20.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@104|8275 - m-1t.ldr@3513|8275 - m-1ta.ldr@3538": "6589.dat@187.0,-80.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@258|8275 - m-1s''.ldr@7116|8275 - m-1s''a.ldr@7178": "3326b.dat@0.0,-120.0,600.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@104|8275 - m-1t.ldr@3514|8275 - m-1ta.ldr@3533": "6589.dat@133.0,-80.0,340.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@89": "3647.dat@40.0,-120.0,340.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1762|8275 - m-1nm.ldr@2232|8275 - m-1nmb.ldr@2266": "58121.dat@50.0,-40.0,440.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@544": "3647.dat@-40.0,-120.0,260.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@233": "57519.dat@-160.0,0.0,40.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@150|8275 - m-1m'.ldr@4202": "58120.dat@40.0,-120.0,370.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@527": "4019.dat@0.0,-200.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@104|8275 - m-1t.ldr@3513|8275 - m-1ta.ldr@3533": "6589.dat@133.0,-80.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@45|8275 - m-1b.ldr@306": "32269.dat@20.0,0.0,40.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@234": "57519.dat@-160.0,0.0,520.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1762|8275 - m-1nm.ldr@2232|8275 - m-1nmb.ldr@3218": "4019.dat@60.0,-40.0,440.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@108|8275 - m-1u.ldr@3582": "32270.dat@0.0,-120.0,20.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@94|8275 - m-1q.ldr@3412": "76019.dat@0.0,-120.0,340.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@258|8275 - m-1s''.ldr@7119|8275 - m-1s''b.ldr@7213": "3648b.dat@0.0,-153.6,702.3",
+    "8275 - main.ldr@16|8275 - m-1.ldr@68|8275 - m-1j.ldr@699": "6542a.dat@-60.0,-40.0,80.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@50|8275 - m-1d.ldr@347": "32270.dat@0.0,-40.0,20.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@530": "4019.dat@0.0,-160.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@236": "57519.dat@160.0,0.0,40.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@542|8275 - m-1ig.ldr@672": "76019.dat@0.0,-120.0,260.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@105|8275 - m-1t.ldr@3514|8275 - m-1ta.ldr@3538": "6589.dat@-187.0,-80.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@542|8275 - m-1ig.ldr@675": "4019.dat@0.0,-120.0,300.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@105|8275 - m-1t.ldr@3513|8275 - m-1ta.ldr@3533": "6589.dat@-133.0,-80.0,340.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@258|8275 - m-1s''.ldr@7116|8275 - m-1s''a.ldr@7177": "3712.dat@0.0,-120.0,570.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1762|8275 - m-1nm.ldr@2230": "6542a.dat@60.0,-40.0,480.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@114|8275 - m-1x.ldr@3766|8275 - m-1xa.ldr@3789": "3648b.dat@0.0,-240.0,0.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@235": "57519.dat@160.0,0.0,520.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@258|8275 - m-1s''.ldr@7116|8275 - m-1s''a.ldr@7171": "4716.dat@0.0,-184.3,676.6",
+    "8275 - main.ldr@16|8275 - m-1.ldr@66|8275 - m-1i.ldr@543": "4019.dat@0.0,-160.0,300.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@112|8275 - m-1w.ldr@3734": "4716.dat@0.0,-200.0,0.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@47|8275 - m-1c.ldr@323": "32270.dat@20.0,-40.0,40.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@151|8275 - m-1n'.ldr@4691": "58120.dat@-40.0,-120.0,370.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@105|8275 - m-1t.ldr@3514|8275 - m-1ta.ldr@3533": "6589.dat@-133.0,-80.0,220.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@68|8275 - m-1j.ldr@701|8275 - m-1jb.ldr@1628": "4019.dat@-60.0,-40.0,120.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@85|8275 - m-1n.ldr@1751": "4019.dat@60.0,-40.0,520.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@68|8275 - m-1j.ldr@701|8275 - m-1jb.ldr@737": "58121.dat@-50.0,-40.0,120.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@105|8275 - m-1t.ldr@3513|8275 - m-1ta.ldr@3538": "6589.dat@-187.0,-80.0,340.0",
+    "8275 - main.ldr@16|8275 - m-1.ldr@104|8275 - m-1t.ldr@3514|8275 - m-1ta.ldr@3538": "6589.dat@187.0,-80.0,340.0"
+  },
+  "note": "Reviewed corrections for 8275. Every override carries a reason. Fingerprints are part name and rounded world position, so a moved or replaced part invalidates its overrides rather than silently repointing them. Drivers list all four motors because 8275 has four and the solver must support more than one. Clutches are locked as a kinematic modelling choice, stated as such in each entry.",
+  "isEmpty": true
+}

@@ -1,7 +1,9 @@
+using System.Collections.Immutable;
 using TechnicsSim.LDraw;
 using TechnicsSim.Mechanics.Catalog;
 using TechnicsSim.Mechanics.Mating;
 using TechnicsSim.Mechanics.Shafts;
+using TechnicsSim.Mechanics.Sidecar;
 
 namespace TechnicsSim.Cli.Commands;
 
@@ -21,7 +23,13 @@ public static class ShaftsCommand
         var analysis = ModelConnectionAnalyzer.Analyze(model, workspace.RequireShadow());
 
         var catalog = CatalogLocator.Load(commandLine.Option("catalog"));
-        var graph = ShaftGraphBuilder.Build(analysis, model.Expansion, catalog);
+
+        var useSidecar = !commandLine.Flag("no-sidecar");
+        var sidecar = useSidecar
+            ? ModelSidecarIo.LoadFor(modelPath)
+            : ModelSidecar.Empty(Path.GetFileName(modelPath));
+
+        var (graph, effect) = SidecarApplication.Build(analysis, model.Expansion, catalog, sidecar);
 
         var top = ParseTop(commandLine.Option("top"));
 
@@ -29,7 +37,10 @@ public static class ShaftsCommand
         Console.WriteLine($"Library: {workspace.LibraryInfo?.UpdateTag ?? "(unknown)"}"
             + $"  |  Shadow: {Short(workspace.ShadowInfo?.GitCommit)}");
         Console.WriteLine($"Catalog: {catalog.Parts.Count} parts");
+        Console.WriteLine($"Sidecar: {DescribeSidecar(useSidecar, sidecar, modelPath)}");
         Console.WriteLine();
+
+        WriteSidecarEffect(effect);
 
         var solvedShafts = graph.Shafts.Count(shaft => shaft.MemberCount > 1);
         Console.WriteLine($"  Shaft assemblies          : {graph.Shafts.Length,8:N0}  ({solvedShafts:N0} with more than one member)");
@@ -38,6 +49,12 @@ public static class ShaftsCommand
         Console.WriteLine($"  Ambiguous meshes          : {graph.AmbiguousMeshes.Length,8:N0}");
         Console.WriteLine($"  Unsupported components    : {graph.UnsupportedComponents.Length,8:N0}");
         Console.WriteLine($"  Uncatalogued components   : {graph.UncataloguedComponents.Length,8:N0}");
+        Console.WriteLine($"  Drivers (motors)          : {graph.Drivers.Length,8:N0}");
+
+        foreach (var driver in graph.Drivers)
+        {
+            Console.WriteLine($"      {driver.Label,-18} {driver.CanonicalPartName,-12} {driver.ShaftId ?? "(no keyed shaft)"}");
+        }
 
         WriteMeshes(graph, top);
         WriteBoundaries(graph);
@@ -64,7 +81,118 @@ public static class ShaftsCommand
             Console.WriteLine($"Wrote {fullPath}");
         }
 
+        if (commandLine.Flag("export-sidecar"))
+        {
+            ExportSidecar(modelPath, model.Expansion, graph, sidecar);
+        }
+
+        // A stale override is a review that no longer applies to this model, which is worth a
+        // non-zero exit so a build step notices rather than trusting the annotations.
+        if (!effect.StaleEntries.IsEmpty)
+        {
+            return 3;
+        }
+
         return model.Expansion.Unresolved.Length == 0 ? 0 : 2;
+    }
+
+    private static string DescribeSidecar(bool enabled, ModelSidecar sidecar, string modelPath)
+    {
+        if (!enabled)
+        {
+            return "disabled (--no-sidecar)";
+        }
+
+        var path = ModelSidecarIo.PathFor(modelPath);
+        if (!File.Exists(path))
+        {
+            return $"none committed ({Path.GetFileName(path)})";
+        }
+
+        return $"{Path.GetFileName(path)}: {sidecar.Meshes.Length} mesh, "
+            + $"{sidecar.Clutches.Length} clutch, {sidecar.Drivers.Length} driver entries";
+    }
+
+    private static void WriteSidecarEffect(SidecarEffect effect)
+    {
+        if (!effect.StaleEntries.IsEmpty)
+        {
+            Console.WriteLine("  Stale sidecar entries (the model changed under these overrides):");
+            foreach (var entry in effect.StaleEntries)
+            {
+                Console.WriteLine($"    {entry.InstanceId}");
+                Console.WriteLine($"      recorded {entry.Expected}, found {entry.Actual}");
+            }
+
+            Console.WriteLine();
+        }
+
+        if (!effect.ChangedAnything)
+        {
+            return;
+        }
+
+        Console.WriteLine("  Sidecar review applied:");
+        foreach (var locked in effect.LockedClutches)
+        {
+            Console.WriteLine($"    clutch locked : {locked}");
+        }
+
+        foreach (var freed in effect.FreedClutches)
+        {
+            Console.WriteLine($"    clutch free   : {freed}");
+        }
+
+        foreach (var rejected in effect.RejectedMeshes)
+        {
+            Console.WriteLine($"    mesh rejected : {rejected}");
+        }
+
+        foreach (var accepted in effect.AcceptedMeshes)
+        {
+            Console.WriteLine($"    mesh accepted : {accepted} (not found automatically)");
+        }
+
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Writes a sidecar skeleton seeded with what the model currently contains.
+    ///
+    /// Existing decisions are preserved; only the fingerprints and the list of things still
+    /// awaiting review are refreshed, so exporting never silently discards a reviewer's work.
+    /// </summary>
+    private static void ExportSidecar(
+        string modelPath,
+        LDraw.Expansion.ModelExpansion expansion,
+        ShaftGraph graph,
+        ModelSidecar existing)
+    {
+        var fingerprints = SidecarApplication.Fingerprints(expansion);
+        var interesting = graph.Gears.Select(gear => gear.InstanceId)
+            .Concat(graph.UnsupportedComponents.Select(component => component.InstanceId))
+            .Concat(graph.Drivers.Select(driver => driver.InstanceId))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var exported = existing with
+        {
+            SchemaVersion = ModelSidecar.CurrentSchemaVersion,
+            Model = Path.GetFileName(modelPath),
+            InstanceFingerprints = fingerprints
+                .Where(pair => interesting.Contains(pair.Key))
+                .ToImmutableDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal),
+            Note = existing.Note
+                ?? "Reviewed corrections for this model. Every override needs a reason. "
+                    + "Fingerprints are part name and rounded world position, so a moved or "
+                    + "replaced part invalidates its overrides instead of silently repointing them.",
+        };
+
+        var path = ModelSidecarIo.PathFor(modelPath);
+        File.WriteAllText(path, ModelSidecarIo.ToJson(exported));
+
+        Console.WriteLine();
+        Console.WriteLine($"Wrote {Path.GetFullPath(path)}");
+        Console.WriteLine($"  {exported.InstanceFingerprints.Count} fingerprints for gears and boundaries.");
     }
 
     private static void WriteMeshes(ShaftGraph graph, int top)

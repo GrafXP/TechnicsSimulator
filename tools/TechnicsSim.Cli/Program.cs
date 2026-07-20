@@ -68,9 +68,14 @@ static void PrintUsage()
               candidates, residuals, confidence, ambiguity, and provenance.
 
           technicssim shafts <model.mpd> [--json <report.json>] [--top <n>] [--catalog <file>]
+                                        [--no-sidecar] [--export-sidecar]
               Build shaft assemblies from keyed connections, mount catalogued gears
               on them, and report meshes with exact ratios, measured residuals, and
               the mechanism boundaries propagation deliberately stops at.
+
+              A committed <model>.mechanics.json is applied unless --no-sidecar is
+              given; --export-sidecar refreshes that file's fingerprints while
+              preserving existing decisions.
 
         Common options:
           --ldraw <path>    Official library: a directory, complete.zip, or LeoCAD library.bin.
@@ -82,5 +87,6 @@ static void PrintUsage()
           0  success
           1  configuration or usage error
           2  the model has unresolved references
+          3  a sidecar override no longer matches the model it annotates
         """);
 }

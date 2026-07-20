@@ -38,7 +38,7 @@ public static class ShaftGraphBuilder
             }
         }
 
-        var (gears, unsupported, uncatalogued, extraShafts) =
+        var (gears, unsupported, uncatalogued, extraShafts, drivers) =
             MountComponents(analysis, expansion, instancesById, catalog, shafts, shaftByInstance, opts);
 
         var allShafts = shafts.AddRange(extraShafts);
@@ -50,7 +50,8 @@ public static class ShaftGraphBuilder
             meshes,
             ambiguous,
             unsupported,
-            uncatalogued);
+            uncatalogued,
+            drivers);
     }
 
     /// <summary>
@@ -188,7 +189,8 @@ public static class ShaftGraphBuilder
         ImmutableArray<MountedGear> Gears,
         ImmutableArray<UnsupportedComponent> Unsupported,
         ImmutableArray<UncataloguedComponent> Uncatalogued,
-        ImmutableArray<ShaftAssembly> ExtraShafts)
+        ImmutableArray<ShaftAssembly> ExtraShafts,
+        ImmutableArray<MountedDriver> Drivers)
         MountComponents(
             ConnectionAnalysis analysis,
             ModelExpansion expansion,
@@ -203,6 +205,7 @@ public static class ShaftGraphBuilder
         var unsupported = ImmutableArray.CreateBuilder<UnsupportedComponent>();
         var uncatalogued = new Dictionary<string, UncataloguedComponent>(StringComparer.OrdinalIgnoreCase);
         var extraShafts = ImmutableArray.CreateBuilder<ShaftAssembly>();
+        var drivers = ImmutableArray.CreateBuilder<MountedDriver>();
         var nextExtra = 0;
 
         var featuresByInstance = analysis.Features
@@ -230,9 +233,21 @@ public static class ShaftGraphBuilder
                 continue;
             }
 
+            if (mechanics.Type == MechanicalComponentType.Motor)
+            {
+                // A motor is neither a gear nor a boundary. Without its own list it would drop
+                // out of the graph, taking the solver's entry points with it.
+                drivers.Add(new MountedDriver(
+                    instance.InstanceId,
+                    instance.CanonicalPartName,
+                    shaftId,
+                    mechanics.Motor?.DefaultInputLabel ?? instance.CanonicalPartName));
+                continue;
+            }
+
             if (!mechanics.IsToothed)
             {
-                // Motors and keyed riders join a shaft but propose no mesh of their own.
+                // Keyed riders join a shaft but propose no mesh of their own.
                 continue;
             }
 
@@ -288,7 +303,8 @@ public static class ShaftGraphBuilder
             gears.ToImmutable(),
             unsupported.ToImmutable(),
             [.. uncatalogued.Values.OrderByDescending(part => part.InstanceCount)],
-            extraShafts.ToImmutable());
+            extraShafts.ToImmutable(),
+            [.. drivers.OrderBy(driver => driver.InstanceId, StringComparer.Ordinal)]);
     }
 
     /// <summary>

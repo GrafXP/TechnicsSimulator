@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using HelixToolkit.SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 using TechnicsSim.Wpf.Rendering;
@@ -17,6 +19,8 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly IEffectsManager _effectsManager = new DefaultEffectsManager();
+    private readonly DispatcherTimer _animationTimer;
+    private long _animationTick;
 
     public MainWindow()
     {
@@ -28,8 +32,18 @@ public partial class MainWindow : Window
         _viewModel = new MainViewModel(renderer, FindRepositoryRoot());
         DataContext = _viewModel;
 
+        _animationTimer = new DispatcherTimer(DispatcherPriority.Render)
+        {
+            Interval = TimeSpan.FromMilliseconds(16),
+        };
+        _animationTimer.Tick += OnAnimationTick;
+
         Loaded += OnLoaded;
-        Closed += (_, _) => _effectsManager.Dispose();
+        Closed += (_, _) =>
+        {
+            _animationTimer.Stop();
+            _effectsManager.Dispose();
+        };
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -76,8 +90,43 @@ public partial class MainWindow : Window
     {
         if (ModelSelector.SelectedItem is ModelChoice choice)
         {
+            _animationTimer.Stop();
             await _viewModel.LoadModelAsync(choice.Path);
         }
+    }
+
+    private void OnToggleAnimation(object sender, RoutedEventArgs e)
+    {
+        _viewModel.ToggleAnimation();
+        if (_viewModel.IsAnimationPlaying)
+        {
+            _animationTick = Stopwatch.GetTimestamp();
+            _animationTimer.Start();
+        }
+        else
+        {
+            _animationTimer.Stop();
+        }
+    }
+
+    private void OnResetAnimation(object sender, RoutedEventArgs e)
+    {
+        _animationTimer.Stop();
+        _viewModel.ResetAnimationPosition();
+    }
+
+    private void OnAnimationTick(object? sender, EventArgs e)
+    {
+        if (!_viewModel.IsAnimationPlaying)
+        {
+            _animationTimer.Stop();
+            return;
+        }
+
+        var now = Stopwatch.GetTimestamp();
+        var elapsed = Stopwatch.GetElapsedTime(_animationTick, now);
+        _animationTick = now;
+        _viewModel.AdvanceAnimation(elapsed.TotalSeconds);
     }
 
     private System.Windows.Point? _pressPoint;

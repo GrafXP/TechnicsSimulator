@@ -13,6 +13,7 @@ using TechnicsSim.Mechanics.Catalog;
 using TechnicsSim.Mechanics.Mating;
 using TechnicsSim.Mechanics.Shafts;
 using TechnicsSim.Mechanics.Sidecar;
+using TechnicsSim.Mechanics.Solver;
 using TechnicsSim.Wpf.Rendering;
 
 namespace TechnicsSim.Wpf.ViewModels;
@@ -33,6 +34,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private ColourPalette _palette = ColourPalette.Fallback;
     private RenderScene? _scene;
     private ConnectionAnalysis? _mechanics;
+    private ShaftGraph? _shaftGraph;
+    private ShaftSolution? _shaftSolution;
+    private ShaftAnimationPlan _shaftAnimationPlan = ShaftAnimationPlan.Empty;
     private ImmutableArray<string> _mechanicalInstances = [];
 
     private string _status = "Ready.";
@@ -40,6 +44,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string? _selectedInstanceId;
     private ImmutableArray<string> _selectedInstanceIds = [];
     private ModelTreeNode? _selectedNode;
+    private AnimationInputChoice? _selectedAnimationInput;
+    private double _animationTurns;
+    private bool _isAnimationPlaying;
+    private string _animationStatus = "No solved drivetrain.";
     private bool _isBusy;
 
     public MainViewModel(ISceneRenderer renderer, string repositoryRoot)
@@ -55,6 +63,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<ModelTreeNode> Tree { get; } = [];
 
     public ObservableCollection<string> AvailableModels { get; } = [];
+
+    public ObservableCollection<AnimationInputChoice> AnimationInputs { get; } = [];
 
     public string Status
     {
@@ -110,16 +120,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var detail = $"{instance.PartName}   colour {instance.Colour.Code} {instance.Colour.Value}"
                 + $"{Environment.NewLine}{instance.InstanceId}";
+            var shaftDetail = ShaftSelectionDetail(instance.InstanceId);
             var connections = _mechanics?.ConnectionsForInstance(instance.InstanceId).ToArray() ?? [];
             if (connections.Length == 0)
             {
-                return detail + $"{Environment.NewLine}No connection candidate.";
+                return detail + shaftDetail + $"{Environment.NewLine}No connection candidate.";
             }
 
             var first = connections[0];
             var selectedFeatureKey = first.InstanceA == instance.InstanceId ? first.FeatureA : first.FeatureB;
             var provenance = _mechanics?.FindFeature(selectedFeatureKey)?.Feature.Provenance;
             return detail
+                + shaftDetail
                 + $"{Environment.NewLine}{connections.Length:N0} candidate(s); first: {first.Kind} ({first.Confidence})"
                 + $"{Environment.NewLine}{first.Rule}"
                 + $"{Environment.NewLine}radial {first.Residuals.RadialLdu:F3} LDU, overlap "
@@ -197,6 +209,64 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>False when no drivetrain was reconstructed, so there is nothing to isolate.</summary>
     public bool HasMechanicalInstances => _mechanicalInstances.Length > 0;
 
+    public bool HasAnimationInputs => AnimationInputs.Count > 0;
+
+    public bool CanAnimate => _shaftSolution is { IsConsistent: true }
+        && !_shaftAnimationPlan.Groups.IsEmpty;
+
+    public AnimationInputChoice? SelectedAnimationInput
+    {
+        get => _selectedAnimationInput;
+        set
+        {
+            if (!Set(ref _selectedAnimationInput, value))
+            {
+                return;
+            }
+
+            SolveAnimation();
+        }
+    }
+
+    /// <summary>Turns made by a unit-speed input, from the initial pose.</summary>
+    public double AnimationTurns
+    {
+        get => _animationTurns;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, 1);
+            if (!Set(ref _animationTurns, clamped))
+            {
+                return;
+            }
+
+            ApplyAnimation();
+            OnPropertyChanged(nameof(AnimationTurnsLabel));
+        }
+    }
+
+    public string AnimationTurnsLabel => $"{AnimationTurns:F3} turns";
+
+    public bool IsAnimationPlaying
+    {
+        get => _isAnimationPlaying;
+        private set
+        {
+            if (Set(ref _isAnimationPlaying, value))
+            {
+                OnPropertyChanged(nameof(PlayPauseLabel));
+            }
+        }
+    }
+
+    public string PlayPauseLabel => IsAnimationPlaying ? "Pause" : "Play";
+
+    public string AnimationStatus
+    {
+        get => _animationStatus;
+        private set => Set(ref _animationStatus, value);
+    }
+
     /// <summary>Locates the library and lists the models shipped with the repository.</summary>
     public void Initialize()
     {
@@ -249,6 +319,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SelectedInstanceId = null;
         _selectedInstanceIds = [];
         _mechanicalInstances = [];
+        ResetAnimation();
         OnPropertyChanged(nameof(HasMechanicalInstances));
 
         try
@@ -291,7 +362,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (graph is not null)
             {
                 Mechanics.Load(path, graph, model.Expansion, sidecar, effect);
+                _shaftGraph = graph;
                 _mechanicalInstances = graph.MechanicalInstanceIds();
+                ConfigureAnimationInputs(graph, sidecar);
             }
 
             _renderer.SetMechanicalInstances(_mechanicalInstances);
@@ -338,6 +411,152 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             return null;
         }
+    }
+
+    private void ConfigureAnimationInputs(ShaftGraph graph, ModelSidecar sidecar)
+    {
+        AnimationInputs.Clear();
+
+        var reviewedById = sidecar.Drivers.ToDictionary(
+            driver => driver.InstanceId, StringComparer.Ordinal);
+        var reviewedInputs = graph.Drivers
+            .Where(driver => driver.ShaftId is not null && reviewedById.ContainsKey(driver.InstanceId))
+            .Select(driver => new ShaftInput(
+                driver.ShaftId!,
+                ExactRatio.One,
+                reviewedById[driver.InstanceId].Label))
+            .ToImmutableArray();
+
+        if (reviewedInputs.Length > 1)
+        {
+            AnimationInputs.Add(new AnimationInputChoice(
+                $"All reviewed drivers ({reviewedInputs.Length})",
+                reviewedInputs));
+        }
+
+        foreach (var driver in graph.Drivers.Where(driver => driver.ShaftId is not null))
+        {
+            var label = reviewedById.GetValueOrDefault(driver.InstanceId)?.Label ?? driver.Label;
+            AnimationInputs.Add(new AnimationInputChoice(
+                label,
+                [new ShaftInput(driver.ShaftId!, ExactRatio.One, label)]));
+        }
+
+        OnPropertyChanged(nameof(HasAnimationInputs));
+        SelectedAnimationInput = AnimationInputs.FirstOrDefault();
+    }
+
+    private void SolveAnimation()
+    {
+        IsAnimationPlaying = false;
+        _animationTurns = 0;
+        _shaftAnimationPlan = ShaftAnimationPlan.Empty;
+        OnPropertyChanged(nameof(AnimationTurns));
+        OnPropertyChanged(nameof(AnimationTurnsLabel));
+        _renderer.SetInstanceTransforms(new Dictionary<string, System.Numerics.Matrix4x4>());
+
+        if (_shaftGraph is null || SelectedAnimationInput is null)
+        {
+            _shaftSolution = null;
+            AnimationStatus = "No solved drivetrain.";
+        }
+        else
+        {
+            _shaftSolution = ShaftSolver.Solve(_shaftGraph, SelectedAnimationInput.Inputs);
+            _shaftAnimationPlan = _scene is null
+                ? ShaftAnimationPlan.Empty
+                : ShaftAnimation.CreatePlan(_scene, _shaftGraph, _shaftSolution);
+            AnimationStatus = _shaftSolution.IsConsistent
+                ? $"{_shaftSolution.Shafts.Length:N0} of {_shaftGraph.Shafts.Length:N0} shafts solved; "
+                    + "unsupported mechanisms remain static."
+                : $"Animation stopped: {_shaftSolution.Conflicts.Length:N0} exact constraint conflict(s). "
+                    + _shaftSolution.Conflicts[0].Message;
+        }
+
+        OnPropertyChanged(nameof(CanAnimate));
+        OnPropertyChanged(nameof(SelectionDetail));
+    }
+
+    private void ApplyAnimation()
+    {
+        if (_scene is null || _shaftGraph is null || _shaftSolution is null)
+        {
+            return;
+        }
+
+        _renderer.SetInstanceTransforms(ShaftAnimation.BuildTransforms(
+            _shaftAnimationPlan,
+            AnimationTurns));
+    }
+
+    private void ResetAnimation()
+    {
+        IsAnimationPlaying = false;
+        _shaftGraph = null;
+        _shaftSolution = null;
+        _shaftAnimationPlan = ShaftAnimationPlan.Empty;
+        AnimationInputs.Clear();
+        _selectedAnimationInput = null;
+        _animationTurns = 0;
+        AnimationStatus = "No solved drivetrain.";
+        _renderer.SetInstanceTransforms(new Dictionary<string, System.Numerics.Matrix4x4>());
+        OnPropertyChanged(nameof(SelectedAnimationInput));
+        OnPropertyChanged(nameof(AnimationTurns));
+        OnPropertyChanged(nameof(AnimationTurnsLabel));
+        OnPropertyChanged(nameof(HasAnimationInputs));
+        OnPropertyChanged(nameof(CanAnimate));
+    }
+
+    public void ToggleAnimation()
+    {
+        if (CanAnimate)
+        {
+            IsAnimationPlaying = !IsAnimationPlaying;
+        }
+    }
+
+    public void ResetAnimationPosition()
+    {
+        IsAnimationPlaying = false;
+        AnimationTurns = 0;
+        _renderer.SetInstanceTransforms(new Dictionary<string, System.Numerics.Matrix4x4>());
+    }
+
+    public void AdvanceAnimation(double elapsedSeconds)
+    {
+        if (!IsAnimationPlaying || elapsedSeconds <= 0)
+        {
+            return;
+        }
+
+        const double turnsPerSecond = 0.2;
+        AnimationTurns = (AnimationTurns + (elapsedSeconds * turnsPerSecond)) % 1.0;
+    }
+
+    private string ShaftSelectionDetail(string instanceId)
+    {
+        var shaft = _shaftGraph?.ShaftForInstance(instanceId);
+        if (shaft is null)
+        {
+            return string.Empty;
+        }
+
+        if (_shaftGraph!.UnsupportedComponents.Any(component => component.InstanceId == instanceId))
+        {
+            return $"{Environment.NewLine}{shaft.ShaftId}   unsupported boundary (static)";
+        }
+
+        var state = _shaftSolution?.Find(shaft.ShaftId);
+        if (state is null)
+        {
+            return $"{Environment.NewLine}{shaft.ShaftId}   unsolved (static)";
+        }
+
+        var suffix = _shaftGraph.Drivers.Any(driver => driver.InstanceId == instanceId)
+            ? "   motor housing static"
+            : string.Empty;
+        return $"{Environment.NewLine}{shaft.ShaftId}   omega {state.AngularVelocity} x input"
+            + $" ({state.AngularVelocity.ToDouble():F6}){suffix}";
     }
 
     /// <summary>Highlights the instances chosen in the mechanics panel, and mirrors them in the tree.</summary>

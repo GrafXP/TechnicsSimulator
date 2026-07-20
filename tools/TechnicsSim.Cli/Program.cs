@@ -21,6 +21,7 @@ try
         "mesh-stats" => MeshStatsCommand.Run(workspace, commandLine),
         "connections" => ConnectionsCommand.Run(workspace, commandLine),
         "shafts" => ShaftsCommand.Run(workspace, commandLine),
+        "solve" => SolveCommand.Run(workspace, commandLine),
         _ => UnknownCommand(commandLine.Command),
     };
 }
@@ -77,6 +78,12 @@ static void PrintUsage()
               given; --export-sidecar refreshes that file's fingerprints while
               preserving existing decisions.
 
+          technicssim solve <model.mpd> [--driver <instance-id>] [--json <report.json>]
+                                       [--catalog <file>] [--no-sidecar]
+              Propagate exact signed angular-velocity ratios over the reviewed shaft graph.
+              Without --driver, every driver enabled by the sidecar is applied as an input;
+              incompatible drivers and closed loops are reported with both derivation paths.
+
         Common options:
           --ldraw <path>    Official library: a directory, complete.zip, or LeoCAD library.bin.
                             Defaults to TECHNICSSIM_LDRAW_PATH, then Library/, then LeoCAD.
@@ -88,5 +95,6 @@ static void PrintUsage()
           1  configuration or usage error
           2  the model has unresolved references
           3  a sidecar override no longer matches the model it annotates
+          4  exact drivetrain constraints conflict
         """);
 }

@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Windows;
 using TechnicsSim.LDraw.Geometry;
 using TechnicsSim.Mechanics.Mating;
@@ -48,6 +49,12 @@ public interface ISceneRenderer
     /// <see cref="EmphasizeMechanics"/> knows what to keep solid.
     /// </summary>
     void SetMechanicalInstances(IEnumerable<string> instanceIds);
+
+    /// <summary>
+    /// Applies replacement model-space transforms to logical instances. Missing instances retain
+    /// their loaded pose; an empty map restores the complete model to that pose.
+    /// </summary>
+    void SetInstanceTransforms(IReadOnlyDictionary<string, Matrix4x4> transforms);
 
     /// <summary>
     /// Fades every instance that is not part of the drivetrain down to <see cref="GhostOpacity"/>.

@@ -5,7 +5,7 @@ TechnicsSimulator is an experimental kinematic simulator for LEGO Technic models
 Most LDraw applications stop at rendering. This project aims to go further: infer axles, bearings, keyed connections, shafts, and gear meshes from model geometry, then propagate rotation through the reconstructed drivetrain with explainable gear ratios.
 
 > [!IMPORTANT]
-> Phases 0 and 1 are complete: the LDraw parser, resolver, expander, geometry pipeline, audit CLI, and an interactive WPF viewer with part selection all work. Mechanism reconstruction — snap features, shafts, gears, and animation — has not started.
+> Phases 0 through 4 are complete. The viewer reconstructs reviewed shaft and gear graphs, solves exact signed ratios for multiple drivers, explains conflicts, and animates the validated 8275 drivetrain while unsupported mechanisms remain static.
 
 ## Project goals
 
@@ -114,7 +114,7 @@ See [PLAN.md](PLAN.md) for the reviewed technical design, delivery gates, data m
 - [x] Phase 1: loader and visual vertical slice.
 - [x] Phase 2: shadow features and connection diagnostics.
 - [x] Phase 3: mechanics catalog, sidecars, and shaft graph.
-- [ ] Phase 4: solver and first validated drivetrain animation.
+- [x] Phase 4: solver and first validated drivetrain animation.
 
 ## Getting started
 
@@ -130,7 +130,7 @@ Run the viewer:
 dotnet run --project src/TechnicsSim.Wpf
 ```
 
-It opens the first model in `Models/` and lets you orbit, select parts, and inspect the tree. Clicking a part shows its full hierarchical instance ID; the tree and the viewport select each other. `--model <path>`, `--diagnostics`, and `--edges` set the startup state so a specific view can be reproduced without clicking through the UI.
+It opens the first model in `Models/` and lets you orbit, select parts, and inspect the tree. Right-drag rotates, middle-drag pans, and the mouse wheel zooms; left-click selects. Clicking a part shows its full hierarchical instance ID, shaft, and solved ratio where applicable, while the tree and viewport select each other. The drivetrain toolbar selects one or all reviewed drivers, plays or pauses the animation, and scrubs one input-shaft turn. `--model <path>`, `--diagnostics`, and `--edges` set the startup state so a specific view can be reproduced without clicking through the UI.
 
 Audit a model from the command line:
 
@@ -141,6 +141,7 @@ dotnet run --project tools/TechnicsSim.Cli -- coverage "Models/8275-1.mpd" --jso
 dotnet run --project tools/TechnicsSim.Cli -- mesh-stats "Models/8275-1.mpd"
 dotnet run --project tools/TechnicsSim.Cli -- connections "Models/8275-1.mpd" --json reports/8275-connections.json
 dotnet run --project tools/TechnicsSim.Cli -- shafts "Models/8275-1.mpd" --json reports/8275-shafts.json
+dotnet run --project tools/TechnicsSim.Cli -- solve "Models/8275-1.mpd" --json reports/8275-solution.json
 ```
 
 `library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count. `mesh-stats` builds the whole render scene headlessly and reports batching, instancing, and triangle counts, so rendering claims can be checked in CI rather than eyeballed.
@@ -149,9 +150,11 @@ dotnet run --project tools/TechnicsSim.Cli -- shafts "Models/8275-1.mpd" --json 
 
 `shafts` builds the rotary graph: it grows shaft assemblies from keyed connections only, mounts catalogued gears onto them, and proposes meshes with exact rational ratios. Every mesh reports tooth counts, the measured and predicted centre distance, the residual between them, face overlap, confidence, and the rule that produced it. Mechanisms the MVP will not solve — clutches, universal joints, turntables, sprockets, racks, and linear actuators — are listed as boundaries with the reason propagation stops, rather than being dropped or silently meshed.
 
+`solve` applies the reviewed driver inputs to that same graph and propagates signed ratios as reduced fractions. Use `--driver <instance-id>` to isolate one motor. Its text and JSON reports include each solved shaft's exact velocity and path length, every unsolved shaft, and both derivation paths for a conflicting loop or driver assignment. On 8275, the reviewed four-driver configuration consistently solves 15 of 109 shafts; the validated medium-motor path reaches its worm wheel at `+1:72` after four gear meshes.
+
 Mesh direction is never assumed. The sign comes from a contact-frame calculation, so it stays correct when a shaft axis happens to be stored the other way round; real 8275 geometry contains both orientations.
 
-Exit codes are `0` for success, `1` for a configuration or usage error, `2` when a model has unresolved references, and `3` when a sidecar override no longer matches the model it annotates.
+Exit codes are `0` for success, `1` for a configuration or usage error, `2` when a model has unresolved references, `3` when a sidecar override no longer matches the model it annotates, and `4` when exact drivetrain constraints conflict.
 
 ## Mechanics catalog and model sidecars
 

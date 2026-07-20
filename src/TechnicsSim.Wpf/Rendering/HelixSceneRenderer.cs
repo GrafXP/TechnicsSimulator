@@ -45,6 +45,11 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     private readonly HashSet<string> _mechanical = new(StringComparer.Ordinal);
     private readonly HashSet<string> _highlighted = new(StringComparer.Ordinal);
     private readonly List<(PhongMaterial Material, ResolvedColour Colour)> _ghostMaterials = [];
+    private readonly Dictionary<string, SceneInstance> _instancesById = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Matrix4x4> _animatedTransforms = new(StringComparer.Ordinal);
+    private readonly List<InstanceModelBinding> _sceneModelBindings = [];
+    private readonly List<InstanceModelBinding> _highlightModelBindings = [];
+    private LineGeometryModel3D? _highlightBoundsModel;
 
     private RenderScene? _scene;
     private ConnectionAnalysis? _mechanics;
@@ -136,6 +141,11 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         Clear();
         _scene = scene;
 
+        foreach (var instance in scene.Instances)
+        {
+            _instancesById[instance.InstanceId] = instance;
+        }
+
         foreach (var batch in scene.Batches)
         {
             var group = scene.Meshes[batch.CanonicalPartName].Groups[batch.MeshGroupIndex];
@@ -201,6 +211,7 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         RemoveAll(_sceneRoot);
         _identities.Clear();
         _ghostMaterials.Clear();
+        _sceneModelBindings.Clear();
 
         if (_scene is null)
         {
@@ -292,20 +303,20 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     private InstancingMeshGeometryModel3D CreateInstancedModel(
         RenderScene scene, InstanceBatch batch, HelixMesh geometry, List<int> indices, bool faded)
     {
-        var transforms = new List<Matrix4x4>(indices.Count);
         var instanceIds = ImmutableArray.CreateBuilder<string>(indices.Count);
 
         foreach (var index in indices)
         {
             var instance = scene.Instances[index];
-            transforms.Add(LDrawAxes.TransformToRenderer(instance.Transform));
             instanceIds.Add(instance.InstanceId);
         }
+
+        var ids = instanceIds.MoveToImmutable();
 
         var model = new InstancingMeshGeometryModel3D
         {
             Geometry = geometry,
-            Instances = transforms,
+            Instances = TransformsFor(ids),
             Material = faded ? CreateGhostMaterial(batch.Colour) : CreateMaterial(batch.Colour),
             CullMode = batch.DoubleSided
                 ? SharpDX.Direct3D11.CullMode.None
@@ -319,7 +330,8 @@ public sealed class HelixSceneRenderer : ISceneRenderer
 
         // A hit reports the instance index within this model, so identity is recorded per model
         // in the same order the transforms were added.
-        _identities.Register(model, instanceIds.MoveToImmutable());
+        _identities.Register(model, ids);
+        _sceneModelBindings.Add(new InstanceModelBinding(model, ids));
         return model;
     }
 
@@ -634,6 +646,8 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     private void RebuildHighlight()
     {
         RemoveAll(_highlightRoot);
+        _highlightModelBindings.Clear();
+        _highlightBoundsModel = null;
 
         if (_scene is null || _highlighted.Count == 0)
         {
@@ -651,9 +665,10 @@ public sealed class HelixSceneRenderer : ISceneRenderer
                 continue;
             }
 
-            if (!instance.WorldBounds.IsEmpty)
+            var bounds = AnimatedBoundsFor(instance);
+            if (!bounds.IsEmpty)
             {
-                AddBox(boxes, instance.WorldBounds);
+                AddBox(boxes, bounds);
                 boxed = true;
             }
 
@@ -662,7 +677,6 @@ public sealed class HelixSceneRenderer : ISceneRenderer
                 continue;
             }
 
-            var transform = LDrawAxes.TransformToRenderer(instance.Transform);
             for (var group = 0; group < mesh.Groups.Length; group++)
             {
                 if (!_buffers.TryGetValue((instance.CanonicalPartName, group), out var geometry))
@@ -673,7 +687,7 @@ public sealed class HelixSceneRenderer : ISceneRenderer
                 var model = new InstancingMeshGeometryModel3D
                 {
                     Geometry = geometry,
-                    Instances = [transform],
+                    Instances = TransformsFor([id]),
                     Material = HighlightMaterial,
                     CullMode = mesh.Groups[group].DoubleSided
                         ? SharpDX.Direct3D11.CullMode.None
@@ -683,19 +697,21 @@ public sealed class HelixSceneRenderer : ISceneRenderer
                 // Registered so that clicking an already-highlighted part re-selects it instead
                 // of picking whatever this overlay is standing in front of.
                 _identities.Register(model, [id]);
+                _highlightModelBindings.Add(new InstanceModelBinding(model, [id]));
                 _highlightRoot.Children.Add(model);
             }
         }
 
         if (boxed)
         {
-            _highlightRoot.Children.Add(new LineGeometryModel3D
+            _highlightBoundsModel = new LineGeometryModel3D
             {
                 Geometry = boxes.ToLineGeometry3D(),
                 Color = SelectionColour,
                 Thickness = 2,
                 IsHitTestVisible = false,
-            });
+            };
+            _highlightRoot.Children.Add(_highlightBoundsModel);
         }
     }
 
@@ -732,6 +748,31 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         }
     }
 
+    public void SetInstanceTransforms(IReadOnlyDictionary<string, Matrix4x4> transforms)
+    {
+        var affected = _animatedTransforms.Keys
+            .Concat(transforms.Keys)
+            .ToHashSet(StringComparer.Ordinal);
+
+        _animatedTransforms.Clear();
+        foreach (var (instanceId, transform) in transforms)
+        {
+            if (_instancesById.ContainsKey(instanceId))
+            {
+                _animatedTransforms[instanceId] = transform;
+            }
+        }
+
+        UpdateTransforms(_sceneModelBindings, affected);
+        UpdateTransforms(_highlightModelBindings, affected);
+        if (_highlightBoundsModel is not null && _highlighted.Any(affected.Contains))
+        {
+            UpdateHighlightBounds();
+        }
+
+        RequestRedraw();
+    }
+
     private void FrameBounds(Bounds bounds)
     {
         var transformed = bounds.Corners()
@@ -761,6 +802,11 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         _mechanical.Clear();
         _highlighted.Clear();
         _ghostMaterials.Clear();
+        _instancesById.Clear();
+        _animatedTransforms.Clear();
+        _sceneModelBindings.Clear();
+        _highlightModelBindings.Clear();
+        _highlightBoundsModel = null;
         _scene = null;
         _mechanics = null;
     }
@@ -851,6 +897,76 @@ public sealed class HelixSceneRenderer : ISceneRenderer
 
     private static Color4 ToColor4(Colour colour) =>
         new(colour.R / 255f, colour.G / 255f, colour.B / 255f, colour.A / 255f);
+
+    private List<Matrix4x4> TransformsFor(ImmutableArray<string> instanceIds)
+    {
+        var transforms = new List<Matrix4x4>(instanceIds.Length);
+        foreach (var instanceId in instanceIds)
+        {
+            if (_instancesById.TryGetValue(instanceId, out var instance))
+            {
+                var transform = _animatedTransforms.GetValueOrDefault(instanceId, instance.Transform);
+                transforms.Add(LDrawAxes.TransformToRenderer(transform));
+            }
+        }
+
+        return transforms;
+    }
+
+    private void UpdateTransforms(
+        IEnumerable<InstanceModelBinding> bindings,
+        IReadOnlySet<string> affectedInstanceIds)
+    {
+        foreach (var binding in bindings)
+        {
+            if (binding.InstanceIds.Any(affectedInstanceIds.Contains))
+            {
+                binding.Model.Instances = TransformsFor(binding.InstanceIds);
+            }
+        }
+    }
+
+    private void UpdateHighlightBounds()
+    {
+        if (_scene is null || _highlightBoundsModel is null)
+        {
+            return;
+        }
+
+        var boxes = new LineBuilder();
+        foreach (var instanceId in _highlighted)
+        {
+            if (_instancesById.TryGetValue(instanceId, out var instance))
+            {
+                AddBox(boxes, AnimatedBoundsFor(instance));
+            }
+        }
+
+        _highlightBoundsModel.Geometry = boxes.ToLineGeometry3D();
+    }
+
+    private Bounds AnimatedBoundsFor(SceneInstance instance)
+    {
+        if (!_animatedTransforms.TryGetValue(instance.InstanceId, out var transform)
+            || _scene is null
+            || !_scene.Meshes.TryGetValue(instance.CanonicalPartName, out var mesh)
+            || mesh.Bounds.IsEmpty)
+        {
+            return instance.WorldBounds;
+        }
+
+        var result = Bounds.Empty;
+        foreach (var corner in mesh.Bounds.Corners())
+        {
+            result = result.Include(Vector3.Transform(corner, transform));
+        }
+
+        return result;
+    }
+
+    private sealed record InstanceModelBinding(
+        InstancingMeshGeometryModel3D Model,
+        ImmutableArray<string> InstanceIds);
 
     /// <summary>
     /// The geometry pipeline works in <see cref="System.Numerics"/>; Helix's collections want

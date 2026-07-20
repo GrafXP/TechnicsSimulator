@@ -1,8 +1,10 @@
 using System.IO;
+using System.Numerics;
 using System.Windows;
 using TechnicsSim.LDraw.Colours;
 using TechnicsSim.LDraw.Expansion;
 using TechnicsSim.LDraw.Geometry;
+using TechnicsSim.LDraw.Library;
 using TechnicsSim.LDraw.Parsing;
 using TechnicsSim.LDraw.Resolution;
 using TechnicsSim.LDraw.Sources;
@@ -43,6 +45,9 @@ internal sealed class FakeRenderer : ISceneRenderer
 
     public IReadOnlyCollection<string> ZoomedInstances { get; private set; } = [];
 
+    public IReadOnlyDictionary<string, Matrix4x4> InstanceTransforms { get; private set; } =
+        new Dictionary<string, Matrix4x4>();
+
     public RenderStatistics Load(RenderScene scene)
     {
         Loaded = scene;
@@ -65,6 +70,9 @@ internal sealed class FakeRenderer : ISceneRenderer
 
     public void SetMechanicalInstances(IEnumerable<string> instanceIds) =>
         MechanicalInstances = instanceIds.ToList();
+
+    public void SetInstanceTransforms(IReadOnlyDictionary<string, Matrix4x4> transforms) =>
+        InstanceTransforms = new Dictionary<string, Matrix4x4>(transforms, StringComparer.Ordinal);
 
     public void ZoomToFit()
     {
@@ -320,6 +328,39 @@ public sealed class SceneAndSelectionTests
         var viewModel = new MainViewModel(new FakeRenderer(), TestPaths.RepositoryRoot);
 
         Assert.Equal(0.2, viewModel.GhostOpacity, 3);
+    }
+
+    [Fact]
+    public async Task Reviewed8275GraphFeedsTheViewerAnimationEndToEndWhenLibrariesAreAvailable()
+    {
+        using var libraryProbe = LibraryLocator.Locate(null, TestPaths.RepositoryRoot)?.Source;
+        if (libraryProbe is null || LibraryLocator.LocateShadow(null, TestPaths.RepositoryRoot) is null)
+        {
+            // The viewer remains usable without optional external data; CI jobs that do not
+            // bootstrap the libraries cannot exercise this real-model integration path.
+            return;
+        }
+
+        var renderer = new FakeRenderer();
+        var viewModel = new MainViewModel(renderer, TestPaths.RepositoryRoot);
+        viewModel.Initialize();
+
+        await viewModel.LoadModelAsync(Path.Combine(TestPaths.RepositoryRoot, "Models", "8275-1.mpd"));
+
+        Assert.True(viewModel.CanAnimate);
+        Assert.Contains("15 of 109 shafts solved", viewModel.AnimationStatus);
+        Assert.Equal("All reviewed drivers (4)", viewModel.SelectedAnimationInput?.DisplayName);
+
+        viewModel.AnimationTurns = 0.25;
+        Assert.NotEmpty(renderer.InstanceTransforms);
+
+        renderer.NextPick = renderer.InstanceTransforms.Keys.First();
+        viewModel.SelectAt(new Point(10, 10));
+        Assert.Contains("omega", viewModel.SelectionDetail);
+
+        viewModel.ToggleAnimation();
+        viewModel.AdvanceAnimation(0.5);
+        Assert.True(viewModel.AnimationTurns > 0.25);
     }
 
     [Fact]

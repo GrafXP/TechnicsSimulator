@@ -87,6 +87,36 @@
             </StackPanel>
         </Border>
 
+        <Border DockPanel.Dock="Top" Background="#252526" Padding="8,5"
+                Visibility="{Binding HasAnimationInputs, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Drive:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding AnimationInputs}"
+                          SelectedItem="{Binding SelectedAnimationInput}"
+                          DisplayMemberPath="DisplayName" VerticalAlignment="Center" />
+                <Button Grid.Column="2" Content="{Binding PlayPauseLabel}" Click="OnToggleAnimation"
+                        IsEnabled="{Binding CanAnimate}" Margin="8,0,6,0" />
+                <Button Grid.Column="3" Content="Reset" Click="OnResetAnimation" />
+                <Slider Grid.Column="4" Minimum="0" Maximum="1" Margin="8,0"
+                        Value="{Binding AnimationTurns, Mode=TwoWay}"
+                        IsEnabled="{Binding CanAnimate}" VerticalAlignment="Center"
+                        ToolTip="Input-shaft turns from the model's initial pose." />
+                <TextBlock Grid.Column="5" Text="{Binding AnimationTurnsLabel}" Style="{StaticResource Mono}"
+                           VerticalAlignment="Center" MinWidth="82" />
+                <TextBlock Grid.Column="6" Text="{Binding AnimationStatus}" Style="{StaticResource Dim}"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Border>
+
         <Border DockPanel.Dock="Bottom" Background="#007ACC" Padding="8,4">
             <Grid>
                 <Grid.ColumnDefinitions>

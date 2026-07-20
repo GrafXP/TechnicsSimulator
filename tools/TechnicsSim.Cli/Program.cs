@@ -20,6 +20,7 @@ try
         "coverage" => CoverageCommand.Run(workspace, commandLine),
         "mesh-stats" => MeshStatsCommand.Run(workspace, commandLine),
         "connections" => ConnectionsCommand.Run(workspace, commandLine),
+        "shafts" => ShaftsCommand.Run(workspace, commandLine),
         _ => UnknownCommand(commandLine.Command),
     };
 }
@@ -66,10 +67,16 @@ static void PrintUsage()
               Extract effective finite snap features and dump span-aware connection
               candidates, residuals, confidence, ambiguity, and provenance.
 
+          technicssim shafts <model.mpd> [--json <report.json>] [--top <n>] [--catalog <file>]
+              Build shaft assemblies from keyed connections, mount catalogued gears
+              on them, and report meshes with exact ratios, measured residuals, and
+              the mechanism boundaries propagation deliberately stops at.
+
         Common options:
           --ldraw <path>    Official library: a directory, complete.zip, or LeoCAD library.bin.
                             Defaults to TECHNICSSIM_LDRAW_PATH, then Library/, then LeoCAD.
           --shadow <path>   LDCad shadow library checkout. Defaults to Library/LDCadShadowLibrary.
+          --catalog <path>  Mechanics catalog JSON. Defaults to data/parts-mechanics.json.
 
         Exit codes:
           0  success

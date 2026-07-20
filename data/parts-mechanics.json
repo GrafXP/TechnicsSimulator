@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "description": "Reviewed mechanical semantics for every drivetrain-relevant part in the supplied models. Built from a library-backed sweep of all distinct parts in 8275, 42055, 42100, and 42121, filtered by official LDraw description. Tooth counts are quoted from those descriptions; every other value is hand-reviewed and attributed. Pitch radius is omitted where the standard Technic module applies, and derived as teeth * 1.25 LDU.",
+  "parts": [
+    {
+      "part": "3647.dat",
+      "type": "SpurGear",
+      "support": "Solved",
+      "teeth": 8,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear  8 Tooth', library UPDATE 2025-08-04",
+      "note": "Places its axle hole along Z in part coordinates rather than Y, which is why the rotation axis is derived from the keyed feature instead of assumed."
+    },
+    {
+      "part": "10928.dat",
+      "type": "SpurGear",
+      "support": "Solved",
+      "teeth": 8,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear  8 Tooth Reinforced', library UPDATE 2025-08-04",
+      "note": "Reinforced remould of 3647. Same tooth count and pitch, so it meshes identically."
+    },
+    {
+      "part": "4019.dat",
+      "type": "SpurGear",
+      "support": "Solved",
+      "teeth": 16,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 16 Tooth', library UPDATE 2025-08-04"
+    },
+    {
+      "part": "94925.dat",
+      "type": "SpurGear",
+      "support": "Solved",
+      "teeth": 16,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 16 Tooth Reinforced', library UPDATE 2025-08-04",
+      "note": "Reinforced remould of 4019."
+    },
+    {
+      "part": "3648b.dat",
+      "type": "SpurGear",
+      "support": "Solved",
+      "teeth": 24,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 24 Tooth with Single Axle Hole', library UPDATE 2025-08-04",
+      "note": "The 8:24 pair is one of the two spacings the teeth * 1.25 module is validated against, at 40 LDU."
+    },
+    {
+      "part": "32270.dat",
+      "type": "DoubleBevelGear",
+      "support": "Solved",
+      "teeth": 12,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "BevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 12 Tooth Double Bevel', library UPDATE 2025-08-04",
+      "note": "The most common gear in the set at 48 instances across all four models."
+    },
+    {
+      "part": "32269.dat",
+      "type": "DoubleBevelGear",
+      "support": "Solved",
+      "teeth": 20,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "BevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 20 Tooth Double Bevel', library UPDATE 2025-08-04"
+    },
+    {
+      "part": "32498.dat",
+      "type": "DoubleBevelGear",
+      "support": "Solved",
+      "teeth": 36,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "BevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 36 Tooth Double Bevel', library UPDATE 2025-08-04",
+      "note": "42100 only, seven instances."
+    },
+    {
+      "part": "6589.dat",
+      "type": "BevelGear",
+      "support": "Solved",
+      "teeth": 12,
+      "meshesWith": ["BevelGear", "DoubleBevelGear"],
+      "source": "LDraw description 'Technic Gear 12 Tooth Bevel', library UPDATE 2025-08-04",
+      "note": "Single-sided bevel: meshes on a perpendicular axis only, never as a spur."
+    },
+    {
+      "part": "32198.dat",
+      "type": "BevelGear",
+      "support": "Solved",
+      "teeth": 20,
+      "meshesWith": ["BevelGear", "DoubleBevelGear"],
+      "source": "LDraw description 'Technic Gear 20 Tooth Bevel', library UPDATE 2025-08-04"
+    },
+    {
+      "part": "87407.dat",
+      "type": "BevelGear",
+      "support": "Solved",
+      "teeth": 20,
+      "meshesWith": ["BevelGear", "DoubleBevelGear"],
+      "source": "LDraw description 'Technic Gear 20 Tooth Bevel with Peghole', library UPDATE 2025-08-04",
+      "note": "The most common gear across the set at 53 instances. The peghole is a mounting feature and does not change the mesh."
+    },
+    {
+      "part": "32072.dat",
+      "type": "KnobGear",
+      "support": "UnsupportedBoundary",
+      "teeth": 4,
+      "meshesWith": ["KnobGear"],
+      "source": "LDraw description 'Technic Gear  4 Knob', library UPDATE 2025-08-04",
+      "unsupportedReason": "Knob gears mesh only with each other and do not follow the teeth * 1.25 module, and no pitch radius has been measured for them yet. Deriving one from the tooth count would give 5 LDU, which is certainly wrong. Two instances in 42055.",
+      "note": "Promote to Solved once a pitch radius is measured against a real 32072 pair and covered by a spacing fixture."
+    },
+    {
+      "part": "4716.dat",
+      "type": "WormGear",
+      "support": "Solved",
+      "wormStarts": 1,
+      "wormHandedness": "Right",
+      "pitchRadiusLdu": 10.0,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear"],
+      "source": "LDraw description 'Technic Worm Gear 2L', library UPDATE 2025-08-04. Single-start is the standard LEGO worm; hand-reviewed. Pitch radius measured from the 8275 worm and 24-tooth pair, whose axes sit 40.00 LDU apart: 40 minus the 24-tooth pitch radius of 30 gives 10.",
+      "note": "10 LDU is also exactly the 8-tooth envelope, since (8 + 24) * 1.25 = 40. A worm therefore occupies the same spacing an 8-tooth gear would, which is the independent cross-check on the measurement. Ratio is starts/drivenTeeth, so one turn of the worm advances the driven gear by one tooth. Non-backdrivability is a friction effect and is deliberately not modelled: the kinematic solver may propagate this constraint in either direction."
+    },
+
+    {
+      "part": "18946.dat",
+      "type": "ClutchGear",
+      "support": "UnsupportedBoundary",
+      "teeth": 16,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 16 Tooth with Clutch on Both Sides', library UPDATE 2025-08-04",
+      "unsupportedReason": "The clutch slips above a torque threshold, so whether the teeth and the axle hole share an angular velocity is load-dependent and outside a kinematic solver. Confirm it locked in the model sidecar to propagate through it.",
+      "note": "Twenty-two instances in 42055, the densest clutch usage in the set."
+    },
+    {
+      "part": "76019.dat",
+      "type": "ClutchGear",
+      "support": "UnsupportedBoundary",
+      "teeth": 24,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 24 Tooth Clutch with Dark Grey Centre', library UPDATE 2025-08-04",
+      "unsupportedReason": "Torque-limiting clutch between the teeth and the axle hole; the coupling is load-dependent. Confirm it locked in the model sidecar to propagate through it."
+    },
+    {
+      "part": "6542a.dat",
+      "type": "ClutchGear",
+      "support": "UnsupportedBoundary",
+      "teeth": 16,
+      "meshesWith": ["SpurGear", "DoubleBevelGear", "ClutchGear", "WormGear"],
+      "source": "LDraw description 'Technic Gear 16 Tooth with Clutch', library UPDATE 2025-08-04",
+      "unsupportedReason": "Torque-limiting clutch between the teeth and the axle hole; the coupling is load-dependent. Confirm it locked in the model sidecar to propagate through it."
+    },
+
+    {
+      "part": "99009.dat",
+      "type": "Turntable",
+      "support": "UnsupportedBoundary",
+      "teeth": 28,
+      "meshesWith": ["SpurGear", "DoubleBevelGear"],
+      "source": "LDraw description 'Technic Turntable 28 Tooth Bottom', library UPDATE 2025-08-04",
+      "unsupportedReason": "A turntable is a two-part bearing ring whose toothed race is driven by a pinion at a spacing that does not follow the ordinary two-gear module. Meshing it as a plain gear would produce a confident wrong ratio."
+    },
+    {
+      "part": "99010.dat",
+      "type": "Turntable",
+      "support": "UnsupportedBoundary",
+      "teeth": 28,
+      "source": "LDraw description 'Technic Turntable 28 Tooth Top', library UPDATE 2025-08-04",
+      "unsupportedReason": "The upper half of the 99009/99010 turntable pair. It carries the rotating body rather than driving a pinion."
+    },
+    {
+      "part": "18939.dat",
+      "type": "Turntable",
+      "support": "UnsupportedBoundary",
+      "teeth": 60,
+      "meshesWith": ["SpurGear", "DoubleBevelGear"],
+      "source": "LDraw description 'Technic Turntable 60 Tooth Bottom', library UPDATE 2025-08-04",
+      "unsupportedReason": "As 99009: the toothed race does not follow the ordinary two-gear module."
+    },
+    {
+      "part": "18938.dat",
+      "type": "Turntable",
+      "support": "UnsupportedBoundary",
+      "teeth": 60,
+      "source": "LDraw description 'Technic Turntable 60 Tooth Top', library UPDATE 2025-08-04",
+      "unsupportedReason": "The upper half of the 18938/18939 turntable pair."
+    },
+
+    {
+      "part": "87761.dat",
+      "type": "GearRack",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Gear Rack  1 x  7 with Pegholes and Axleholes', library UPDATE 2025-08-04",
+      "unsupportedReason": "Rotary-to-linear conversion needs a translational degree of freedom, which the rotary graph does not have. The only rack in the supplied models, in 42055."
+    },
+
+    {
+      "part": "57519.dat",
+      "type": "Sprocket",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Sprocket Wheel  40.4', library UPDATE 2025-08-04",
+      "unsupportedReason": "Track path animation is deferred, so a sprocket turns but drives nothing the solver represents."
+    },
+    {
+      "part": "57520.dat",
+      "type": "Sprocket",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Sprocket Wheel 25.4', library UPDATE 2025-08-04",
+      "unsupportedReason": "Track path animation is deferred, so a sprocket turns but drives nothing the solver represents."
+    },
+
+    {
+      "part": "62520.dat",
+      "type": "UniversalJointEnd",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Universal Joint 3L End', library UPDATE 2025-08-04",
+      "unsupportedReason": "A universal joint transmits rotation at a varying instantaneous ratio that averages to 1:1 over a revolution. Propagating 1:1 would imply phase-correct motion the MVP does not compute."
+    },
+    {
+      "part": "62519.dat",
+      "type": "UniversalJointCentre",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Universal Joint 3L Centre', library UPDATE 2025-08-04",
+      "unsupportedReason": "The cross linking two 62520 yokes; its motion is the articulated part the MVP defers."
+    },
+    {
+      "part": "3712.dat",
+      "type": "UniversalJointEnd",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Universal Joint 4L End with Bush End', library UPDATE 2025-08-04",
+      "unsupportedReason": "As 62520: the instantaneous ratio varies through a revolution."
+    },
+    {
+      "part": "3326b.dat",
+      "type": "UniversalJointCentre",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Universal Joint Centre Type 2', library UPDATE 2025-08-04",
+      "unsupportedReason": "The cross linking two 3712 yokes."
+    },
+
+    {
+      "part": "6641.dat",
+      "type": "ChangeoverCatch",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Transmission Changeover Catch Type 1', library UPDATE 2025-08-04",
+      "unsupportedReason": "A gearbox selector engages one of several output paths depending on its sliding position, which the graph has no state for. Four instances in 42055 drive its gearbox."
+    },
+
+    {
+      "part": "61904.dat",
+      "type": "LinearActuator",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Linear Actuator  2 x  2 Bracket Hinged Mount', library UPDATE 2025-08-04",
+      "unsupportedReason": "Prismatic mechanism; the rotary graph has no translational degree of freedom."
+    },
+    {
+      "part": "92693c01.dat",
+      "type": "LinearActuator",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Linear Actuator  4 x  1 x  1 Body Assembly', library UPDATE 2025-08-04",
+      "unsupportedReason": "Prismatic mechanism; the rotary graph has no translational degree of freedom."
+    },
+    {
+      "part": "92693c01-f2.dat",
+      "type": "LinearActuator",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Linear Actuator  4 x  1 x  1 (Extended)', library UPDATE 2025-08-04",
+      "unsupportedReason": "The extended-pose variant of 92693c01."
+    },
+    {
+      "part": "92695.dat",
+      "type": "LinearActuator",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Linear Actuator  4 x  1 x  1 Axle Actuator', library UPDATE 2025-08-04",
+      "unsupportedReason": "The driven screw inside a 92693 actuator; its output is translation."
+    },
+    {
+      "part": "92696.dat",
+      "type": "LinearActuator",
+      "support": "UnsupportedBoundary",
+      "source": "LDraw description 'Technic Linear Actuator  4 x  1 x  1 Piston', library UPDATE 2025-08-04",
+      "unsupportedReason": "The translating piston of a 92693 actuator."
+    },
+
+    {
+      "part": "32494.dat",
+      "type": "AxleDriver",
+      "support": "Solved",
+      "source": "LDraw description 'Technic Wheel Spindle Axle Driver', library UPDATE 2025-08-04",
+      "note": "Not toothed. It is a keyed rider, so it joins whichever shaft its axle feature keys to and transfers that shaft's angular velocity unchanged."
+    },
+
+    {
+      "part": "58120.dat",
+      "type": "Motor",
+      "support": "Solved",
+      "motorInputLabel": "PF Medium Motor",
+      "source": "LDraw description 'Electric Power Functions Medium Motor', library UPDATE 2025-08-04",
+      "note": "Two in 8275. Reaches seven shadow features by inheritance, but those locate the housing rather than the output shaft, so the driver axis comes from the keyed feature its output axle occupies."
+    },
+    {
+      "part": "58121.dat",
+      "type": "Motor",
+      "support": "Solved",
+      "motorInputLabel": "PF XL Motor",
+      "source": "LDraw description 'Electric Power Functions XL Motor (Complete)', library UPDATE 2025-08-04",
+      "note": "Two in 8275 and one in 42055, which is why 42055 is also a motorised model."
+    }
+  ]
+}

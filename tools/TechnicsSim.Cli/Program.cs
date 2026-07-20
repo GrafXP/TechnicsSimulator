@@ -19,6 +19,7 @@ try
         "inspect-model" => InspectModelCommand.Run(workspace, commandLine),
         "coverage" => CoverageCommand.Run(workspace, commandLine),
         "mesh-stats" => MeshStatsCommand.Run(workspace, commandLine),
+        "connections" => ConnectionsCommand.Run(workspace, commandLine),
         _ => UnknownCommand(commandLine.Command),
     };
 }
@@ -60,6 +61,10 @@ static void PrintUsage()
           technicssim mesh-stats <model.mpd> [--no-edges]
               Build the full render scene headlessly and report batching,
               instancing, triangle counts, and timings.
+
+          technicssim connections <model.mpd> [--json <report.json>] [--top <n>]
+              Extract effective finite snap features and dump span-aware connection
+              candidates, residuals, confidence, ambiguity, and provenance.
 
         Common options:
           --ldraw <path>    Official library: a directory, complete.zip, or LeoCAD library.bin.

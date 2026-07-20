@@ -9,6 +9,8 @@ using HelixToolkit.SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 using TechnicsSim.LDraw.Colours;
 using TechnicsSim.LDraw.Geometry;
+using TechnicsSim.Mechanics.Features;
+using TechnicsSim.Mechanics.Mating;
 using Colour = TechnicsSim.LDraw.Colours.Rgba;
 using HelixMesh = HelixToolkit.SharpDX.MeshGeometry3D;
 using MediaColor = System.Windows.Media.Color;
@@ -34,6 +36,7 @@ public sealed class HelixSceneRenderer : ISceneRenderer
     private readonly InstanceIdentityMap _identities = new();
 
     private RenderScene? _scene;
+    private ConnectionAnalysis? _mechanics;
     private bool _showEdges;
     private bool _showDiagnostics;
 
@@ -120,6 +123,15 @@ public sealed class HelixSceneRenderer : ISceneRenderer
             scene.UploadedTriangleCount,
             scene.TriangleCount,
             watch.ElapsedMilliseconds);
+    }
+
+    public void SetMechanicsDiagnostics(ConnectionAnalysis? analysis)
+    {
+        _mechanics = analysis;
+        if (ShowDiagnostics && _scene is not null)
+        {
+            BuildDiagnostics(_scene);
+        }
     }
 
     private InstancingMeshGeometryModel3D CreateInstancedModel(
@@ -239,6 +251,135 @@ public sealed class HelixSceneRenderer : ISceneRenderer
             Thickness = 0.5,
             IsHitTestVisible = false,
         });
+
+        if (_mechanics is not null)
+        {
+            BuildMechanicsDiagnostics(_mechanics);
+        }
+    }
+
+    private void BuildMechanicsDiagnostics(ConnectionAnalysis analysis)
+    {
+        var matched = analysis.Connections
+            .SelectMany(connection => new[] { connection.FeatureA, connection.FeatureB })
+            .ToHashSet(StringComparer.Ordinal);
+        var ambiguous = analysis.Ambiguities
+            .Select(ambiguity => ambiguity.FeatureKey)
+            .ToHashSet(StringComparer.Ordinal);
+        var axes = new LineBuilder();
+        var matchedSections = new LineBuilder();
+        var unmatchedSections = new LineBuilder();
+        var ambiguousSections = new LineBuilder();
+        var mates = new LineBuilder();
+        var ambiguousMates = new LineBuilder();
+
+        foreach (var feature in analysis.Features)
+        {
+            var axis = FeatureGeometry.Axis(feature);
+            axes.AddLine(ToVector3(LDrawAxes.PointToRenderer(axis.Start)), ToVector3(LDrawAxes.PointToRenderer(axis.End)));
+
+            var sectionBuilder = ambiguous.Contains(feature.Key)
+                ? ambiguousSections
+                : matched.Contains(feature.Key)
+                    ? matchedSections
+                    : unmatchedSections;
+            AddSectionOutlines(sectionBuilder, feature);
+        }
+
+        foreach (var connection in analysis.Connections)
+        {
+            var a = analysis.FindFeature(connection.FeatureA);
+            var b = analysis.FindFeature(connection.FeatureB);
+            if (a is null || b is null)
+            {
+                continue;
+            }
+
+            var centreA = FeatureGeometry.Axis(a).Centre;
+            var centreB = FeatureGeometry.Axis(b).Centre;
+            var builder = connection.IsAmbiguous ? ambiguousMates : mates;
+            if (Vector3.DistanceSquared(centreA, centreB) > 1e-4f)
+            {
+                builder.AddLine(
+                    ToVector3(LDrawAxes.PointToRenderer(centreA)),
+                    ToVector3(LDrawAxes.PointToRenderer(centreB)));
+            }
+            else
+            {
+                // Coaxial mates often share a centre, so a short cross makes the edge visible.
+                var axis = FeatureGeometry.Axis(a).Direction;
+                var side = Vector3.Cross(axis, Math.Abs(axis.Y) < 0.9f ? Vector3.UnitY : Vector3.UnitX);
+                side = side.LengthSquared() > 1e-8f ? Vector3.Normalize(side) * 3f : Vector3.UnitX * 3f;
+                builder.AddLine(
+                    ToVector3(LDrawAxes.PointToRenderer(centreA - side)),
+                    ToVector3(LDrawAxes.PointToRenderer(centreA + side)));
+            }
+        }
+
+        AddDiagnosticLines(axes, Colors.DeepSkyBlue, 0.7);
+        AddDiagnosticLines(matchedSections, Colors.Cyan, 1.0);
+        AddDiagnosticLines(unmatchedSections, Colors.Orange, 1.0);
+        AddDiagnosticLines(ambiguousSections, Colors.Magenta, 1.3);
+        AddDiagnosticLines(mates, Colors.LimeGreen, 2.0);
+        AddDiagnosticLines(ambiguousMates, Colors.Magenta, 2.0);
+    }
+
+    private void AddDiagnosticLines(LineBuilder builder, MediaColor colour, double thickness)
+    {
+        var geometry = builder.ToLineGeometry3D();
+        if (geometry.Positions is null || geometry.Positions.Count == 0)
+        {
+            return;
+        }
+
+        _diagnosticsRoot.Children.Add(new LineGeometryModel3D
+        {
+            Geometry = geometry,
+            Color = colour,
+            Thickness = thickness,
+            IsHitTestVisible = false,
+        });
+    }
+
+    private static void AddSectionOutlines(LineBuilder builder, PlacedFeature feature)
+    {
+        var sections = FeatureGeometry.CylinderSections(feature);
+        if (sections.IsEmpty)
+        {
+            return;
+        }
+
+        var x = Vector3.TransformNormal(Vector3.UnitX, feature.WorldTransform);
+        var z = Vector3.TransformNormal(Vector3.UnitZ, feature.WorldTransform);
+        x = x.LengthSquared() > 1e-8f ? Vector3.Normalize(x) : Vector3.UnitX;
+        z = z.LengthSquared() > 1e-8f ? Vector3.Normalize(z) : Vector3.UnitZ;
+
+        AddCircle(builder, sections[0].Start, sections[0].Radius, x, z);
+        foreach (var section in sections)
+        {
+            AddCircle(builder, section.End, section.Radius, x, z);
+            builder.AddLine(
+                ToVector3(LDrawAxes.PointToRenderer(section.Start + (x * section.Radius))),
+                ToVector3(LDrawAxes.PointToRenderer(section.End + (x * section.Radius))));
+            builder.AddLine(
+                ToVector3(LDrawAxes.PointToRenderer(section.Start - (x * section.Radius))),
+                ToVector3(LDrawAxes.PointToRenderer(section.End - (x * section.Radius))));
+        }
+    }
+
+    private static void AddCircle(LineBuilder builder, Vector3 centre, float radius, Vector3 x, Vector3 z)
+    {
+        const int segments = 16;
+        var previous = centre + (x * radius);
+        for (var index = 1; index <= segments; index++)
+        {
+            var angle = index * MathF.Tau / segments;
+            var current = centre + (x * MathF.Cos(angle) * radius) + (z * MathF.Sin(angle) * radius);
+            builder.AddLine(
+                ToVector3(LDrawAxes.PointToRenderer(previous)),
+                ToVector3(LDrawAxes.PointToRenderer(current)));
+            previous = current;
+        }
     }
 
     private static LineGeometryModel3D BuildAxis(Vector3 direction, MediaColor colour)
@@ -376,6 +517,7 @@ public sealed class HelixSceneRenderer : ISceneRenderer
         _highlightRoot.Children.Clear();
         _identities.Clear();
         _scene = null;
+        _mechanics = null;
     }
 
     private static HelixMesh ToHelixMesh(MeshGroup group)

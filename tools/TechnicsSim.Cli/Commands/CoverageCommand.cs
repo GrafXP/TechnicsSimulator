@@ -69,7 +69,7 @@ public static class CoverageCommand
         WriteCoverageRow("none", s.ByUniquePart.None, s.ByInstance.None);
         Console.WriteLine();
 
-        Console.WriteLine("  Feature types found (reachability, pre-Phase-2 semantics):");
+        Console.WriteLine("  Feature types found (reachability; use 'connections' for effective semantics):");
         foreach (var (type, count) in s.FeatureTypeHistogram)
         {
             Console.WriteLine($"    {type,-12} {count,7:N0}");
@@ -77,11 +77,11 @@ public static class CoverageCommand
 
         Console.WriteLine();
         Console.WriteLine($"  SNAP_CLEAR metas seen      : {s.SnapClearCount,7:N0}  "
-            + "(inherited totals above are upper bounds until Phase 2 applies them)");
+            + "(reachability totals; the effective extractor applies them)");
         Console.WriteLine($"  Mirrored child references  : {s.MirroredChildReferences,7:N0}  "
-            + "(Phase 2 mirror policy decides each)");
+            + "(the effective extractor decides each)");
         Console.WriteLine($"  Scaled child references    : {s.ScaledChildReferences,7:N0}  "
-            + "(Phase 2 scale policy decides each)");
+            + "(the effective extractor decides each)");
 
         if (s.HighUseUncoveredParts.Count > 0)
         {

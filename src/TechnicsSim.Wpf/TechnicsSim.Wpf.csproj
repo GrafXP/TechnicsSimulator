@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TechnicsSim.LDraw\TechnicsSim.LDraw.csproj" />
+    <ProjectReference Include="..\TechnicsSim.Mechanics\TechnicsSim.Mechanics.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,6 @@
 using System.Windows;
 using TechnicsSim.LDraw.Geometry;
+using TechnicsSim.Mechanics.Mating;
 
 namespace TechnicsSim.Wpf.Rendering;
 
@@ -21,6 +22,9 @@ public interface ISceneRenderer
 {
     /// <summary>Uploads a scene, replacing whatever was loaded before.</summary>
     RenderStatistics Load(RenderScene scene);
+
+    /// <summary>Supplies effective features and mate diagnostics for the overlay pass.</summary>
+    void SetMechanicsDiagnostics(ConnectionAnalysis? analysis);
 
     void Clear();
 

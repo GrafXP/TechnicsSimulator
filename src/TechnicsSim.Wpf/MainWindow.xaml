@@ -30,7 +30,7 @@
                 <Button Content="Zoom to fit" Click="OnZoomToFit" Margin="8,0,6,0" />
                 <Button Content="Zoom to selection" Click="OnZoomToSelection" />
                 <CheckBox Content="Edges" IsChecked="{Binding ShowEdges}" />
-                <CheckBox Content="Diagnostics (axes + bounds)" IsChecked="{Binding ShowDiagnostics}" />
+                <CheckBox Content="Diagnostics (bounds + features + mates)" IsChecked="{Binding ShowDiagnostics}" />
             </StackPanel>
         </Border>
 
@@ -103,6 +103,18 @@
                 <TextBlock Text="{Binding Statistics}" Foreground="#AAAAAA" FontFamily="Consolas"
                            FontSize="11" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                            Margin="10" IsHitTestVisible="False" />
+
+                <Border Background="#AA000000" Padding="7,4" HorizontalAlignment="Right"
+                        VerticalAlignment="Top" Margin="10" IsHitTestVisible="False"
+                        Visibility="{Binding ShowDiagnostics, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock FontFamily="Consolas" FontSize="11">
+                        <Run Text="axes " Foreground="DeepSkyBlue" />
+                        <Run Text="matched " Foreground="Cyan" />
+                        <Run Text="unmatched " Foreground="Orange" />
+                        <Run Text="ambiguous " Foreground="Magenta" />
+                        <Run Text="mate" Foreground="LimeGreen" />
+                    </TextBlock>
+                </Border>
 
                 <Border Background="#AA000000" IsHitTestVisible="False"
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">

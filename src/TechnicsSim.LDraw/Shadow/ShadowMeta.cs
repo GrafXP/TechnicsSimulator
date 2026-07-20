@@ -6,9 +6,9 @@ namespace TechnicsSim.LDraw.Shadow;
 /// <summary>
 /// One <c>0 !LDCAD &lt;NAME&gt; [key=value] ...</c> line, kept as ordered raw fields.
 ///
-/// Phase 0 only needs to know which features exist and of what type. Phase 2 turns these
-/// fields into oriented finite shapes; keeping the ordered raw form here means that work
-/// starts from a faithful record rather than a re-scan.
+/// The coverage probe only needs to know which features exist and of what type. The mechanics
+/// extractor turns these fields into oriented finite shapes; keeping the ordered raw form here
+/// gives both consumers one faithful record rather than two scanners.
 /// </summary>
 public sealed record ShadowMeta(
     string Name,

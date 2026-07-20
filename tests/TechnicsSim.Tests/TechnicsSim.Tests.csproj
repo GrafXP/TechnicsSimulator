@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TechnicsSim.LDraw\TechnicsSim.LDraw.csproj" />
+    <ProjectReference Include="..\..\src\TechnicsSim.Mechanics\TechnicsSim.Mechanics.csproj" />
   </ItemGroup>
 
 </Project>

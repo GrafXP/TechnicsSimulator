@@ -6,6 +6,7 @@ using TechnicsSim.LDraw.Geometry;
 using TechnicsSim.LDraw.Parsing;
 using TechnicsSim.LDraw.Resolution;
 using TechnicsSim.LDraw.Sources;
+using TechnicsSim.Mechanics.Mating;
 using TechnicsSim.Wpf.Rendering;
 using TechnicsSim.Wpf.ViewModels;
 
@@ -29,6 +30,8 @@ internal sealed class FakeRenderer : ISceneRenderer
 
     public bool ShowDiagnostics { get; set; }
 
+    public ConnectionAnalysis? Diagnostics { get; private set; }
+
     public RenderStatistics Load(RenderScene scene)
     {
         Loaded = scene;
@@ -36,6 +39,8 @@ internal sealed class FakeRenderer : ISceneRenderer
             scene.Instances.Length, scene.Batches.Length, scene.DistinctMeshGroups,
             scene.UploadedTriangleCount, scene.TriangleCount, 0);
     }
+
+    public void SetMechanicsDiagnostics(ConnectionAnalysis? analysis) => Diagnostics = analysis;
 
     public void Clear()
     {

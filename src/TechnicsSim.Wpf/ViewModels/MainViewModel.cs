@@ -8,6 +8,7 @@ using TechnicsSim.LDraw.Colours;
 using TechnicsSim.LDraw.Geometry;
 using TechnicsSim.LDraw.Library;
 using TechnicsSim.LDraw.Sources;
+using TechnicsSim.Mechanics.Mating;
 using TechnicsSim.Wpf.Rendering;
 
 namespace TechnicsSim.Wpf.ViewModels;
@@ -22,9 +23,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly string _repositoryRoot;
 
     private ILDrawFileSource? _library;
+    private ILDrawFileSource? _shadow;
     private LibraryInfo? _libraryInfo;
+    private ShadowLibraryInfo? _shadowInfo;
     private ColourPalette _palette = ColourPalette.Fallback;
     private RenderScene? _scene;
+    private ConnectionAnalysis? _mechanics;
 
     private string _status = "Ready.";
     private string _statistics = string.Empty;
@@ -63,7 +67,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>Provenance line shown in the status bar, per the plan's diagnostics requirement.</summary>
     public string LibraryDescription => _libraryInfo is null
         ? "No LDraw library found. Run scripts/bootstrap-libraries.ps1."
-        : $"{_libraryInfo.UpdateTag ?? "unknown"}  |  {Path.GetFileName(_libraryInfo.Path)}";
+        : $"{_libraryInfo.UpdateTag ?? "unknown"}  |  shadow "
+          + (_shadowInfo?.GitCommit is { } commit ? commit[..Math.Min(12, commit.Length)] : "unavailable");
 
     public string? SelectedInstanceId
     {
@@ -93,8 +98,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return _selectedInstanceId;
             }
 
-            return $"{instance.PartName}   colour {instance.Colour.Code} {instance.Colour.Value}"
+            var detail = $"{instance.PartName}   colour {instance.Colour.Code} {instance.Colour.Value}"
                 + $"{Environment.NewLine}{instance.InstanceId}";
+            var connections = _mechanics?.ConnectionsForInstance(instance.InstanceId).ToArray() ?? [];
+            if (connections.Length == 0)
+            {
+                return detail + $"{Environment.NewLine}No connection candidate.";
+            }
+
+            var first = connections[0];
+            var selectedFeatureKey = first.InstanceA == instance.InstanceId ? first.FeatureA : first.FeatureB;
+            var provenance = _mechanics?.FindFeature(selectedFeatureKey)?.Feature.Provenance;
+            return detail
+                + $"{Environment.NewLine}{connections.Length:N0} candidate(s); first: {first.Kind} ({first.Confidence})"
+                + $"{Environment.NewLine}{first.Rule}"
+                + $"{Environment.NewLine}radial {first.Residuals.RadialLdu:F3} LDU, overlap "
+                + $"{first.Residuals.AxialOverlapLdu:F3} LDU"
+                + (first.IsAmbiguous ? "  AMBIGUOUS" : string.Empty)
+                + (provenance is null
+                    ? string.Empty
+                    : $"{Environment.NewLine}{provenance.ShadowFile}:{provenance.ShadowLineNumber}  "
+                      + $"({provenance.TransformChain.Length:N0} transform step(s))");
         }
     }
 
@@ -148,6 +172,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _palette = ColourPalette.Load(found.Source);
         }
 
+        var shadowInfo = LibraryLocator.LocateShadow(null, _repositoryRoot);
+        if (shadowInfo is not null)
+        {
+            _shadowInfo = shadowInfo;
+            _shadow = new DirectoryFileSource(shadowInfo.Path, "LDCad shadow library");
+        }
+
         OnPropertyChanged(nameof(LibraryDescription));
 
         var models = Path.Combine(_repositoryRoot, "Models");
@@ -185,18 +216,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             var watch = Stopwatch.StartNew();
 
-            var (scene, model) = await Task.Run(() =>
+            var (scene, model, mechanics) = await Task.Run(() =>
             {
                 var loaded = ModelLoader.Load(path, [_library]);
                 var revision = _libraryInfo?.Sha256 ?? _libraryInfo?.UpdateTag ?? "unknown";
                 var cache = new PartMeshCache(loaded.Resolver, revision);
-                return (new SceneBuilder(cache, _palette).Build(loaded.Expansion), loaded);
+                var renderScene = new SceneBuilder(cache, _palette).Build(loaded.Expansion);
+                var analysis = _shadow is null ? null : ModelConnectionAnalyzer.Analyze(loaded, _shadow);
+                return (renderScene, loaded, analysis);
             });
 
             watch.Stop();
             _scene = scene;
+            _mechanics = mechanics;
 
             var stats = _renderer.Load(scene);
+            _renderer.SetMechanicsDiagnostics(mechanics);
             _renderer.ZoomToFit();
 
             Tree.Add(ModelTreeNode.Build(scene, model.Root.Name));
@@ -204,7 +239,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Statistics =
                 $"{stats.Instances:N0} instances   {stats.InstancedModels:N0} batches   "
                 + $"{stats.DistinctVertexBuffers:N0} buffers   "
-                + $"{stats.UploadedTriangles:N0} tris uploaded / {stats.DrawnTriangles:N0} drawn";
+                + $"{stats.UploadedTriangles:N0} tris uploaded / {stats.DrawnTriangles:N0} drawn"
+                + (mechanics is null
+                    ? "   no shadow diagnostics"
+                    : $"   {mechanics.Features.Length:N0} features / {mechanics.Connections.Length:N0} mates / "
+                      + $"{mechanics.Ambiguities.Length:N0} ambiguous");
 
             var unresolved = model.Expansion.Unresolved.Length;
             Status = unresolved == 0

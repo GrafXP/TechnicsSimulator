@@ -25,8 +25,8 @@ public enum ShadowCoverage
 /// <summary>Shadow coverage for one canonical part.</summary>
 /// <param name="DirectFeatureCount">Snap features declared on the part's own shadow file.</param>
 /// <param name="InheritedFeatureCount">
-/// Snap features found below the part. This is a Phase 0 reachability count, not the Phase 2
-/// effective-feature count: it does not yet apply transforms, grids, scale/mirror policies,
+/// Snap features found below the part. This is a reachability count, not the mechanics
+/// effective-feature count: it does not apply transforms, grids, scale/mirror policies,
 /// or <c>SNAP_CLEAR</c>, all of which change the final total.
 /// </param>
 /// <param name="ClearCount">
@@ -34,8 +34,8 @@ public enum ShadowCoverage
 /// above overstates the effective one.
 /// </param>
 /// <param name="MirroredChildReferences">
-/// References inside the part tree whose transform has a negative determinant. Phase 2 must
-/// decide, per feature, whether the snap <c>mirror</c> policy accepts or rejects inheritance
+/// References inside the part tree whose transform has a negative determinant. The effective
+/// extractor decides, per feature, whether the snap <c>mirror</c> policy accepts or rejects inheritance
 /// across each of these. Counting them now sizes that work instead of guessing at it.
 /// </param>
 /// <param name="ScaledChildReferences">
@@ -61,8 +61,8 @@ public sealed record PartShadowCoverage(
 /// This is deliberately a reachability probe rather than the real extractor. It walks the
 /// official geometry tree and asks whether a matching shadow file exists at each node. It does
 /// not compose transforms, expand grids, honour scale/mirror inheritance policies, resolve
-/// <c>SNAP_INCL</c>, or apply <c>SNAP_CLEAR</c> ordering. Those are Phase 2, and conflating the
-/// two would produce a coverage number that quietly disagrees with the eventual mechanics.
+/// <c>SNAP_INCL</c>, or apply <c>SNAP_CLEAR</c> ordering. Those belong to the mechanics extractor;
+/// conflating the two would produce a coverage number that quietly disagrees with it.
 /// </summary>
 public sealed class ShadowCoverageProbe
 {
@@ -153,7 +153,7 @@ public sealed class ShadowCoverageProbe
         foreach (var reference in document.References)
         {
             // Inspect every reference site, even one whose target was already visited: the
-            // Phase 2 mirror and scale policies are evaluated per reference, not per part.
+            // Effective mirror and scale policies are evaluated per reference, not per part.
             ClassifyTransform(reference.Transform, acc);
 
             var resolved = _resolver.Resolve(reference.TargetName);

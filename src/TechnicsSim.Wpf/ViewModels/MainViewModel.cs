@@ -8,7 +8,10 @@ using TechnicsSim.LDraw.Colours;
 using TechnicsSim.LDraw.Geometry;
 using TechnicsSim.LDraw.Library;
 using TechnicsSim.LDraw.Sources;
+using TechnicsSim.Mechanics.Catalog;
 using TechnicsSim.Mechanics.Mating;
+using TechnicsSim.Mechanics.Shafts;
+using TechnicsSim.Mechanics.Sidecar;
 using TechnicsSim.Wpf.Rendering;
 
 namespace TechnicsSim.Wpf.ViewModels;
@@ -40,7 +43,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         _renderer = renderer;
         _repositoryRoot = repositoryRoot;
+        Mechanics = new MechanicsPanelViewModel(HighlightFromPanel);
     }
+
+    /// <summary>The reviewable drivetrain and its sidecar editing surface.</summary>
+    public MechanicsPanelViewModel Mechanics { get; }
 
     public ObservableCollection<ModelTreeNode> Tree { get; } = [];
 
@@ -216,14 +223,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             var watch = Stopwatch.StartNew();
 
-            var (scene, model, mechanics) = await Task.Run(() =>
+            var (scene, model, mechanics, graph, sidecar, effect) = await Task.Run(() =>
             {
                 var loaded = ModelLoader.Load(path, [_library]);
                 var revision = _libraryInfo?.Sha256 ?? _libraryInfo?.UpdateTag ?? "unknown";
                 var cache = new PartMeshCache(loaded.Resolver, revision);
                 var renderScene = new SceneBuilder(cache, _palette).Build(loaded.Expansion);
                 var analysis = _shadow is null ? null : ModelConnectionAnalyzer.Analyze(loaded, _shadow);
-                return (renderScene, loaded, analysis);
+
+                // The drivetrain needs both the shadow features and the catalog. Either being
+                // absent is a normal setup, not an error, so the panel simply stays empty.
+                ShaftGraph? built = null;
+                var loadedSidecar = ModelSidecarIo.LoadFor(path);
+                var sidecarEffect = SidecarEffect.None;
+
+                if (analysis is not null && TryLoadCatalog() is { } catalog)
+                {
+                    (built, sidecarEffect) = SidecarApplication.Build(
+                        analysis, loaded.Expansion, catalog, loadedSidecar);
+                }
+
+                return (renderScene, loaded, analysis, built, loadedSidecar, sidecarEffect);
             });
 
             watch.Stop();
@@ -235,6 +255,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _renderer.ZoomToFit();
 
             Tree.Add(ModelTreeNode.Build(scene, model.Root.Name));
+
+            if (graph is not null)
+            {
+                Mechanics.Load(path, graph, model.Expansion, sidecar, effect);
+            }
 
             Statistics =
                 $"{stats.Instances:N0} instances   {stats.InstancedModels:N0} batches   "
@@ -258,6 +283,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Loads the mechanics catalog, treating its absence as a missing optional input rather
+    /// than a failure: the viewer still renders and the mechanics panel stays empty.
+    /// </summary>
+    private MechanicsCatalog? TryLoadCatalog()
+    {
+        try
+        {
+            return CatalogLocator.Load(null, _repositoryRoot);
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or CatalogValidationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Highlights an instance chosen in the mechanics panel, and mirrors it in the tree.</summary>
+    private void HighlightFromPanel(string instanceId)
+    {
+        SelectedInstanceId = instanceId;
+        _renderer.Highlight(instanceId);
+        SelectTreeNode(instanceId);
     }
 
     /// <summary>Handles a viewport click, resolving it to a logical instance.</summary>

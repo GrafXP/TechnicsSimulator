@@ -4,6 +4,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!--
+      InvariantGlobalization is deliberately NOT set. WPF needs real culture data: enabling it
+      makes HelixToolkit's view cube fail at construction with "Cannot find non-neutral culture
+      related to 'en-us'". Culture-independent parsing is guaranteed where it matters, by
+      passing CultureInfo.InvariantCulture explicitly in the LDraw parser and report writers,
+      and the CLI and the viewer must share one setting so they cannot format results
+      differently.
+    -->
   </PropertyGroup>
 </Project>

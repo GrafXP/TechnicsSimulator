@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/TechnicsSim.LDraw/TechnicsSim.LDraw.csproj" />
+    <Project Path="src/TechnicsSim.Wpf/TechnicsSim.Wpf.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TechnicsSim.Tests/TechnicsSim.Tests.csproj" />
+    <Project Path="tests/TechnicsSim.Wpf.Tests/TechnicsSim.Wpf.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/TechnicsSim.Cli/TechnicsSim.Cli.csproj" />

@@ -5,7 +5,7 @@ TechnicsSimulator is an experimental kinematic simulator for LEGO Technic models
 Most LDraw applications stop at rendering. This project aims to go further: infer axles, bearings, keyed connections, shafts, and gear meshes from model geometry, then propagate rotation through the reconstructed drivetrain with explainable gear ratios.
 
 > [!IMPORTANT]
-> Phase 0 is complete: the LDraw parser, resolver, logical-part expander, and audit CLI are implemented and pinned by tests. There is not yet a viewer or any mechanism simulation.
+> Phases 0 and 1 are complete: the LDraw parser, resolver, expander, geometry pipeline, audit CLI, and an interactive WPF viewer with part selection all work. Mechanism reconstruction — snap features, shafts, gears, and animation — has not started.
 
 ## Project goals
 
@@ -84,14 +84,17 @@ Unsupported mechanisms will remain static and be labeled in the UI.
 The implementation targets .NET 8 and Windows WPF:
 
 ```text
-src/TechnicsSim.LDraw/       Parsing, file sources, transforms, colors, geometry   [exists]
+src/TechnicsSim.LDraw/       Parsing, file sources, transforms, colours, geometry  [exists]
 src/TechnicsSim.Mechanics/   Snap features, matching, catalog, graph, solver       [phase 2]
-src/TechnicsSim.Wpf/         Helix-based viewer and diagnostics UI                 [phase 1]
+src/TechnicsSim.Wpf/         Helix-based viewer and diagnostics UI                 [exists]
 tools/TechnicsSim.Cli/       Coverage reports and graph diagnostics                [exists]
 tests/TechnicsSim.Tests/     Fixtures, golden reports, and integration tests       [exists]
+tests/TechnicsSim.Wpf.Tests/ Selection mapping, axis conversion, scene batching    [exists]
 ```
 
 Report building lives in the core library rather than the CLI, so the command line and the eventual diagnostics UI cannot drift into emitting different numbers for the same model.
+
+The renderer sits behind `ISceneRenderer`, so no HelixToolkit type reaches the view model, the mechanism code, or the tests. The LDraw-to-renderer axis change lives at exactly one documented boundary (`LDrawAxes`) and is a rotation rather than a mirror, because a mirror would invert every face and quietly undo the BFC work done while building meshes.
 
 The renderer is planned around [HelixToolkit.Wpf.SharpDX](https://www.nuget.org/packages/HelixToolkit.Wpf.SharpDX/3.1.2). Core parsing and mechanics will remain independent of WPF so they can be tested and used from the CLI.
 
@@ -105,7 +108,7 @@ See [PLAN.md](PLAN.md) for the reviewed technical design, delivery gates, data m
 - [x] Write the implementation and verification plan.
 - [x] Establish the external shadow-library source and revision.
 - [x] Phase 0: solution, resolver, permanent audit CLI, and library bootstrap.
-- [ ] Phase 1: loader and visual vertical slice.
+- [x] Phase 1: loader and visual vertical slice.
 - [ ] Phase 2: shadow features and connection diagnostics.
 - [ ] Phase 3: mechanics catalog, sidecars, and shaft graph.
 - [ ] Phase 4: solver and first validated drivetrain animation.
@@ -118,15 +121,24 @@ dotnet build
 dotnet test
 ```
 
-Then audit a model:
+Run the viewer:
+
+```powershell
+dotnet run --project src/TechnicsSim.Wpf
+```
+
+It opens the first model in `Models/` and lets you orbit, select parts, and inspect the tree. Clicking a part shows its full hierarchical instance ID; the tree and the viewport select each other. `--model <path>`, `--diagnostics`, and `--edges` set the startup state so a specific view can be reproduced without clicking through the UI.
+
+Audit a model from the command line:
 
 ```powershell
 dotnet run --project tools/TechnicsSim.Cli -- library-info
 dotnet run --project tools/TechnicsSim.Cli -- inspect-model "Models/8275-1.mpd"
 dotnet run --project tools/TechnicsSim.Cli -- coverage "Models/8275-1.mpd" --json reports/8275.json
+dotnet run --project tools/TechnicsSim.Cli -- mesh-stats "Models/8275-1.mpd"
 ```
 
-`library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count.
+`library-info` prints the exact parts-library revision and shadow commit every other report depends on. `inspect-model` summarizes sections, the three instance counts, and any resolution failure. `coverage` adds shadow-feature availability per part, weighted by instance count. `mesh-stats` builds the whole render scene headlessly and reports batching, instancing, and triangle counts, so rendering claims can be checked in CI rather than eyeballed.
 
 Exit codes are `0` for success, `1` for a configuration or usage error, and `2` when a model has unresolved references.
 
@@ -169,6 +181,10 @@ Implemented so far:
 - Cycle detection, stable hierarchical instance IDs, and shadow-meta field parsing.
 - Baseline tests pinning all three MPDs to the audited section, line, instance, and part counts.
 - Golden coverage reports per model, compared with source paths excluded so a diff means a real interpretation change.
+- BFC fixtures: winding declarations, mid-file winding changes, `INVERTNEXT`, reflecting transforms, and the case where the two cancel.
+- Colour fixtures covering inherited colour 16, edge colour 24, direct colours, and material clauses that must not overwrite a surface colour.
+- Scene batching assertions: repeated parts collapse to one vertex buffer, colour variants share it, and uploaded triangles stay separate from drawn triangles.
+- Selection mapping from a rendered instance index back to its hierarchical logical instance ID, and the axis conversion's handedness.
 
 Planned:
 

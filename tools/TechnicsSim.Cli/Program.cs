@@ -18,6 +18,7 @@ try
         "library-info" => LibraryInfoCommand.Run(workspace),
         "inspect-model" => InspectModelCommand.Run(workspace, commandLine),
         "coverage" => CoverageCommand.Run(workspace, commandLine),
+        "mesh-stats" => MeshStatsCommand.Run(workspace, commandLine),
         _ => UnknownCommand(commandLine.Command),
     };
 }
@@ -55,6 +56,10 @@ static void PrintUsage()
 
           technicssim coverage <model.mpd> [--json <report.json>]
               Report logical part coverage and shadow-feature availability.
+
+          technicssim mesh-stats <model.mpd> [--no-edges]
+              Build the full render scene headlessly and report batching,
+              instancing, triangle counts, and timings.
 
         Common options:
           --ldraw <path>    Official library: a directory, complete.zip, or LeoCAD library.bin.
